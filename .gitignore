@@ -1,0 +1,13 @@
+# Chiavi e configurazione locale
+.env
+
+# Ambiente virtuale e cache Python
+.venv/
+__pycache__/
+*.pyc
+
+# Editor e sistema operativo
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
