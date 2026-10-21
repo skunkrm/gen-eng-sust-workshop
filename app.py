@@ -1,4 +1,4 @@
-"""Interfaccia web del consulente ESG con upload di documenti. Avvio: uv run streamlit run app.py"""
+"""ESG Copilot: l'agente che legge, calcola e crea report. Avvio: uv run streamlit run app.py"""
 
 import streamlit as st
 
@@ -6,51 +6,107 @@ from config import MODEL, MODELS
 from engine import reply
 from extractor import build_knowledge_base
 
-st.set_page_config(page_title="ESG Copilot", page_icon="🌱")
+st.set_page_config(page_title="ESG Copilot", page_icon="🌱", layout="wide")
 st.title("🌱 ESG Copilot")
-st.caption("Il tuo consulente CSRD ed ESRS, costruito sul Generative Engine")
+st.caption("Il consulente CSRD ed ESRS che legge i documenti, calcola le emissioni e prepara i report")
 
-for chiave, valore in (("messages", []), ("tokens", 0), ("kb_text", ""), ("kb_names", [])):
+DEFAULT = {"messages": [], "tokens": 0, "kb_text": "", "kb_names": [], "allegati": {},
+           "foto_inviate": set(), "stato": {}}
+for chiave, valore in DEFAULT.items():
     if chiave not in st.session_state:
         st.session_state[chiave] = valore
+
+IMMAGINI = ("png", "jpg", "jpeg")
 
 with st.sidebar:
     st.subheader("Modello")
     modello = st.selectbox("Modello", list(MODELS), index=list(MODELS).index(MODEL),
                            format_func=lambda m: f"{m} — {MODELS[m]}", label_visibility="collapsed")
 
-    st.subheader("Documenti")
-    files = st.file_uploader("Carica PDF, Word o Excel", type=["pdf", "docx", "xlsx"],
-                             accept_multiple_files=True)
-    nomi = sorted(f.name for f in files or [])
-    if nomi != st.session_state.kb_names:  # rileggiamo i file solo se sono cambiati
-        st.session_state.kb_text = build_knowledge_base(files) if files else ""
+    st.subheader("Documenti e foto")
+    files = st.file_uploader("PDF, Word, Excel o foto", type=["pdf", "docx", "xlsx", *IMMAGINI],
+                             accept_multiple_files=True) or []
+    documenti = [f for f in files if not f.name.lower().endswith(IMMAGINI)]
+    foto = [f for f in files if f.name.lower().endswith(IMMAGINI)]
+
+    nomi = sorted(f.name for f in documenti)
+    if nomi != st.session_state.kb_names:  # rileggiamo i documenti solo se sono cambiati
+        st.session_state.kb_text = build_knowledge_base(documenti) if documenti else ""
         st.session_state.kb_names = nomi
     if nomi:
         st.success(f"{len(nomi)} documento/i in memoria")
+    nuove_foto = [f for f in foto if f.name not in st.session_state.foto_inviate]
+    if nuove_foto:
+        st.info(f"{len(nuove_foto)} foto verranno inviate con la prossima domanda")
 
     st.metric("Token usati in questa sessione", f"{st.session_state.tokens:,}".replace(",", "."))
     if st.button("Nuova conversazione"):
-        st.session_state.messages = []
+        for chiave in ("messages", "allegati", "stato"):
+            st.session_state[chiave] = type(DEFAULT[chiave])()
         st.rerun()
 
-for m in st.session_state.messages:
+
+def mostra_allegati(indice):
+    for i, a in enumerate(st.session_state.allegati.get(indice, [])):
+        if a["tipo"] == "chart":
+            st.image(a["png"], caption=a["titolo"])
+            st.download_button("⬇️ Scarica grafico (PNG)", a["png"], file_name="grafico.png",
+                               mime="image/png", key=f"g{indice}_{i}")
+        elif a["tipo"] == "file":
+            st.download_button(f"⬇️ Scarica {a['filename']}", a["data"], file_name=a["filename"],
+                               mime=a["mime"], key=f"f{indice}_{i}")
+        elif a["tipo"] == "foto":
+            st.image(a["data"], width=260)
+
+
+for indice, m in enumerate(st.session_state.messages):
     with st.chat_message(m["role"]):
         st.markdown(m["content"])
+        mostra_allegati(indice)
 
 if domanda := st.chat_input("Chiedi qualcosa al consulente ESG…"):
+    immagini = [{"data": f.getvalue(), "mime": f.type or "image/jpeg", "name": f.name} for f in nuove_foto]
+    indice_utente = len(st.session_state.messages)
+    st.session_state.allegati[indice_utente] = [{"tipo": "foto", "data": i["data"]} for i in immagini]
     with st.chat_message("user"):
         st.markdown(domanda)
+        mostra_allegati(indice_utente)
+
+    indice_risposta = indice_utente + 1
+    allegati, nomi_file, testo = [], [], ""
     with st.chat_message("assistant"):
-        with st.spinner(f"Il consulente sta pensando ({modello})…"):
+        with st.status("L'agente sta lavorando…", expanded=True) as pannello:
             try:
-                testo, token = reply(domanda, st.session_state.messages, st.session_state.kb_text, modello)
+                for tipo, dati in reply(domanda, st.session_state.messages, st.session_state.kb_text,
+                                        modello, immagini, st.session_state.stato):
+                    if tipo == "step":
+                        st.markdown(dati)
+                    elif tipo == "calc":
+                        st.markdown(f"🧮 Calcolate **{dati['numero_voci']} voci**: "
+                                    + ", ".join(f"{k} = {v:,.1f} t CO2e" for k, v in dati["totali_per_scope_t_CO2e"].items()))
+                    elif tipo == "chart":
+                        allegati.append({"tipo": "chart", **dati})
+                        st.markdown(f"📊 Grafico creato: {dati['titolo']}")
+                    elif tipo == "file":
+                        allegati.append({"tipo": "file", **dati})
+                        nomi_file.append(dati["filename"])
+                        st.markdown(f"📄 File creato: {dati['filename']}")
+                    elif tipo == "tokens":
+                        st.session_state.tokens += dati
+                    elif tipo == "done":
+                        testo = dati
+                pannello.update(label="Fatto", state="complete", expanded=False)
             except Exception as errore:
-                testo, token = f"⚠️ Errore nella chiamata al modello: {errore}", 0
-        st.markdown(testo)
+                testo = f"⚠️ Errore nella chiamata al modello: {errore}"
+                pannello.update(label="Errore", state="error")
+
+    # Lasciamo traccia dei file nella conversazione, così il modello sa cosa ha già creato
+    if nomi_file:
+        testo += "\n\n_File creati: " + ", ".join(nomi_file) + "_"
+    st.session_state.foto_inviate.update(i["name"] for i in immagini)
     st.session_state.messages += [
         {"role": "user", "content": domanda},
         {"role": "assistant", "content": testo},
     ]
-    st.session_state.tokens += token
+    st.session_state.allegati[indice_risposta] = allegati
     st.rerun()
