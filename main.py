@@ -8,9 +8,6 @@ from openai import APIConnectionError, APIStatusError, OpenAI
 # Legge la chiave dal file .env
 load_dotenv()
 
-if not os.getenv("GEN_ENGINE_API_KEY"):
-    raise SystemExit("Manca la chiave: copia .env.example in .env e inserisci GEN_ENGINE_API_KEY.")
-
 client = OpenAI(
     base_url=os.getenv("GEN_ENGINE_BASE_URL", "https://openai.generative.engine.capgemini.com/v1"),
     api_key=os.getenv("GEN_ENGINE_API_KEY"),
