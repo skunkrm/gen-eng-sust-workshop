@@ -13,10 +13,14 @@ if not os.getenv("GEN_ENGINE_API_KEY"):
 client = OpenAI(
     base_url=os.getenv("GEN_ENGINE_BASE_URL", "https://openai.generative.engine.capgemini.com/v1"),
     api_key=os.getenv("GEN_ENGINE_API_KEY"),
-    timeout=120,
+    timeout=180,
 )
 
-# Il modello è il "motore": per cambiarlo basta cambiare questa riga
+# Modelli a confronto: il primo è quello di partenza
+MODELS = {
+    "amazon.nova-lite-v1:0": "Economico, meno preciso",
+    "anthropic.claude-sonnet-4-6": "Più costoso, più preciso",
+}
 MODEL = "amazon.nova-lite-v1:0"
 
 MAX_TOKENS = 4096
