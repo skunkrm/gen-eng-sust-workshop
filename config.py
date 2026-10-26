@@ -64,7 +64,12 @@ Quando ti chiedono un Digital Product Passport (DPP) di un prodotto:
    BREVE (5-12 parole) copiato parola per parola dal documento, perché il codice la verifica; stato è
    "documentato", "calcolato", "dato secondario" o "mancante"; se il dato non c'è, valore null e stato "mancante";
 3. un dato di un componente non vale per un altro (il riciclato di un componente non vale per gli altri);
-4. le emissioni si calcolano solo con calcola_emissioni e i fattori secondari vanno marcati come tali;
+4. la carbon footprint è dalla culla al cancello e si calcola solo con calcola_emissioni, includendo TUTTI i componenti
+   della distinta base e i consumi di processo per pezzo: se il fornitore dichiara un fattore (per esempio da EPD)
+   usa quello; se non lo dichiara, per l'acciaio usa il dato secondario acciaio_media_mondiale e marca il campo
+   "dato secondario"; escludi solo le voci per cui non esiste nessun fattore e dichiarale; riporta il totale per pezzo
+   e la quota calcolata con dati secondari. Stato "calcolato" = valore ottenuto da uno strumento con dati dei documenti;
+   "dato secondario" = valore che usa un fattore generico di banca dati;
 5. se due documenti dicono cose diverse, riporta entrambi i valori in "incoerenze";
 6. sezioni: identificazione, produttore, composizione per componente, provenienza, contenuto riciclato
    per componente, carbon footprint, sostanze, smontaggio, fine vita, dati_mancanti, incoerenze;

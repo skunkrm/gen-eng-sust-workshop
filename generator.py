@@ -193,7 +193,9 @@ def _larghezze_colonne(righe):
         return (22, 30, 30, 22)  # tabelle del passaporto: stesse colonne in tutto il documento
     colonne = max(len(r) for r in righe)
     lung = [max(len(r[i]) if i < len(r) else 0 for r in righe) for i in range(colonne)]
-    return tuple(min(max(n, 6), 45) for n in lung)
+    # la parola più lunga di ogni colonna non deve andare a capo (es. "documentato", nomi di file)
+    parola = [max((len(w) for r in righe if i < len(r) for w in r[i].split()), default=0) for i in range(colonne)]
+    return tuple(max(min(max(n, 6), 45), parola[i] + 2) for i, n in enumerate(lung))
 
 
 def _pdf(titolo, contenuto, grafico):
@@ -207,8 +209,8 @@ def _pdf(titolo, contenuto, grafico):
     for tipo, valore in _blocchi(contenuto):
         pdf.set_text_color(31, 78, 90) if tipo in ("h1", "h2", "h3") else pdf.set_text_color(0, 0, 0)
         if tipo == "tabella":
-            pdf.set_font("Helvetica", size=8.5)
             colonne = max(len(r) for r in valore)
+            pdf.set_font("Helvetica", size=8.5 if colonne <= 4 else 7.5)  # tabelle larghe: font più piccolo
             righe = [[_latin1(_pulisci(c)) for c in r] + [""] * (colonne - len(r)) for r in valore]
             stile = FontFace(emphasis="BOLD", color=255, fill_color=(31, 78, 90))
             with pdf.table(first_row_as_headings=True, headings_style=stile, line_height=5.5,
@@ -249,6 +251,13 @@ def _testo_valore(v):
     return str(v)
 
 
+def _fonte_breve(v):
+    """Nome del documento leggibile e spezzabile in tabella: senza estensione, con spazi al posto di _."""
+    import re
+    testo = _testo_valore(v)
+    return re.sub(r"\.(pdf|xlsx|docx)\b", "", testo, flags=re.I).replace("_", " ")
+
+
 def _titolo_chiave(k):
     return str(k).replace("_", " ").strip().capitalize()
 
@@ -262,7 +271,25 @@ def _dpp_markdown(oggetto):
         for nome, c in campi:
             stato = str(c.get("stato") or "")
             righe.append(f"| {_titolo_chiave(nome)} | {_testo_valore(c.get('valore'))} | "
-                         f"{_testo_valore(c.get('fonte'))} | {stato} |")
+                         f"{_fonte_breve(c.get('fonte'))} | {stato} |")
+        righe.append("")
+
+    def cella(v):
+        if _e_campo(v):
+            return f"{_testo_valore(v.get('valore'))} ({v.get('stato')})"
+        return _testo_valore(v)
+
+    def tabella_record(record):
+        """Lista di oggetti simili (es. un componente per riga): una tabella con una colonna per chiave."""
+        chiavi = []
+        for r in record:
+            for k in r:
+                if k != "citazione" and k not in chiavi:
+                    chiavi.append(k)
+        righe.append("| " + " | ".join(_titolo_chiave(k) for k in chiavi) + " |")
+        for r in record:
+            righe.append("| " + " | ".join(_fonte_breve(r.get(k)) if k == "fonte" else cella(r.get(k))
+                                           for k in chiavi) + " |")
         righe.append("")
 
     def sezione(nodo, livello):
@@ -273,8 +300,15 @@ def _dpp_markdown(oggetto):
             campi = [(k, v) for k, v in nodo.items() if _e_campo(v)]
             if campi:
                 tabella(campi)
+            semplici = [(k, v) for k, v in nodo.items()
+                        if not _e_campo(v) and not isinstance(v, (dict, list)) and k != "citazione"]
+            if len(semplici) >= 3:  # oggetto con molti valori semplici: tabella a due colonne
+                righe.append("| Voce | Valore |")
+                for k, v in semplici:
+                    righe.append(f"| {_titolo_chiave(k)} | {_testo_valore(v)} |")
+                righe.append("")
             for k, v in nodo.items():
-                if _e_campo(v):
+                if _e_campo(v) or k == "citazione" or (len(semplici) >= 3 and (k, v) in semplici):
                     continue
                 if isinstance(v, (dict, list)):
                     righe.append("#" * min(livello, 3) + " " + _titolo_chiave(k))
@@ -285,6 +319,9 @@ def _dpp_markdown(oggetto):
         if isinstance(nodo, list):
             if nodo and all(_e_campo(x) for x in nodo):
                 tabella([(x.get("campo") or x.get("nome") or f"voce {i + 1}", x) for i, x in enumerate(nodo)])
+            elif nodo and all(isinstance(x, dict) for x in nodo) and all(
+                    all(_e_campo(v) or not isinstance(v, (dict, list)) for v in x.values()) for x in nodo):
+                tabella_record(nodo)
             else:
                 for i, x in enumerate(nodo):
                     if isinstance(x, dict):

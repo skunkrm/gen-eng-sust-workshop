@@ -306,12 +306,15 @@ def execute_tool(name, args, stato):
                             "oppure segna il campo come mancante con valore null. Poi riprova."), ("check", esito)
                 stato["ultima_verifica"] = esito
                 stato["ultimo_dpp"] = json.loads(testo)
+                stato["esito_verifica_testo"] = (
+                    f" Verifica delle fonti superata: {esito['citazioni_verificate']} citazioni trovate nei documenti, "
+                    f"{esito['campi_mancanti']} campi dichiarati mancanti.")
             grafico = stato.get("ultimo_grafico") if args.get("includi_grafico") else None
             dati, nome, mime = make_document(args["formato"], args["nome_file"], args["titolo"],
                                              args.get("contenuto", ""), grafico)
             evento = ("file", {"data": dati, "filename": nome, "mime": mime,
                                "verifica": stato.pop("ultima_verifica", None)})
-            return f"File {nome} creato e disponibile per il download.", evento
+            return f"File {nome} creato e disponibile per il download." + stato.pop("esito_verifica_testo", ""), evento
 
         return f"Strumento sconosciuto: {name}", None
     except Exception as errore:  # l'errore torna al modello, che può correggersi
