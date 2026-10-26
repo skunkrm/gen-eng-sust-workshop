@@ -1,6 +1,6 @@
 """La logica della chat: manda conversazione e documenti al modello."""
 
-from config import MAX_TOKENS, MODEL, SYSTEM_PROMPT, client
+from config import MAX_TOKENS, MODEL, max_tokens, SYSTEM_PROMPT, client
 
 
 def build_messages(message, history, knowledge_base=""):
@@ -36,7 +36,7 @@ def reply(message, history, knowledge_base="", model=MODEL):
     risposta = client.chat.completions.create(
         model=model,
         messages=build_messages(message, history, knowledge_base),
-        max_tokens=MAX_TOKENS,
+        max_tokens=max_tokens(model),
     )
     scelta = risposta.choices[0]
     testo = _testo(scelta.message.content)
