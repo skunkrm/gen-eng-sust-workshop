@@ -119,6 +119,12 @@ html[data-esg-tema="chiaro"] .esg-testata { background: linear-gradient(140deg, 
   transition: transform .5s cubic-bezier(.16, 1, .3, 1), background .3s; }
 .esg-tema:hover { background: rgba(255, 255, 255, .12); transform: rotate(40deg); }
 .esg-tema:focus-visible { outline: 2px solid #7DCB8A; outline-offset: 3px; }
+.esg-comandi { display: flex; gap: .55rem; }
+/* tutto schermo: icona disegnata in CSS, cambia quando si entra o si esce */
+.esg-schermo { font-size: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23E6EEEA' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center;
+  background-size: 1.15rem; }
+.esg-schermo:hover { transform: scale(1.08); }
+html[data-esg-schermo="pieno"] .esg-schermo { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23E6EEEA' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5'/%3E%3C/svg%3E"); }
 
 .esg-titolo { margin: .7rem 0 0; font-size: clamp(2.4rem, 5.4vw, 4rem); line-height: .95; font-weight: 800;
   letter-spacing: -0.045em; padding: 0;
@@ -297,6 +303,16 @@ JS = r"""
   setTimeout(() => D.documentElement.setAttribute('data-esg-visto', ''), 1500);
 
   try { if (localStorage.getItem('esg-pannello') === 'chiuso') D.documentElement.dataset.esgPannello = 'chiuso'; } catch (e) {}
+  // ---------- tutto schermo (si esce anche con Esc) ----------
+  D.addEventListener('click', ev => {
+    if (!ev.target.closest('[data-esg-schermo-pulsante]')) return;
+    if (D.fullscreenElement) D.exitFullscreen(); else D.documentElement.requestFullscreen().catch(() => {});
+  });
+  D.addEventListener('fullscreenchange', () => {
+    if (D.fullscreenElement) D.documentElement.dataset.esgSchermo = 'pieno';
+    else delete D.documentElement.dataset.esgSchermo;
+  });
+
   D.addEventListener('click', ev => {
     if (!ev.target.closest('[data-esg-pannello-pulsante]')) return;
     const chiuso = D.documentElement.dataset.esgPannello === 'chiuso' ? 'aperto' : 'chiuso';
@@ -502,7 +518,10 @@ def testata(contenitore, modello, documenti, token, dollari, secondi, ultima,
 <div class="esg-testata esg-vetro{' lavoro' if lavoro else ''}">
   <div class="esg-alto">
     <div class="esg-stato"><i></i>{stato}</div>
-    <button class="esg-tema" data-esg-tema-pulsante title="Cambia tema" aria-label="Cambia tema chiaro o scuro">☀</button>
+    <div class="esg-comandi">
+      <button class="esg-tema esg-schermo" data-esg-schermo-pulsante title="Tutto schermo" aria-label="Tutto schermo">schermo</button>
+      <button class="esg-tema" data-esg-tema-pulsante title="Cambia tema" aria-label="Cambia tema chiaro o scuro">☀</button>
+    </div>
   </div>
   <h1 class="esg-titolo">{NOME}</h1>
   <p class="esg-macchina">L'agente <b data-frasi="{frasi}"></b></p>
