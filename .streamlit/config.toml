@@ -1,16 +1,15 @@
-# Tema di base scuro: l'aspetto completo (vetro, animazioni, tema chiaro) lo aggiunge ui.py.
-
+# Tema "Carta": chiaro e pulito. Il tema scuro si attiva col pulsante nell'intestazione dell'app.
 [client]
 toolbarMode = "minimal"
 
 [theme]
-base = "dark"
-primaryColor = "#7DCB8A"
-backgroundColor = "#0B1317"
-secondaryBackgroundColor = "#16232A"
-textColor = "#E6EEEA"
-linkColor = "#9CE0A8"
-borderColor = "#24343C"
+base = "light"
+primaryColor = "#2E7D47"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F2F5F3"
+textColor = "#17211C"
+linkColor = "#1D6B37"
+borderColor = "#D5DDD8"
 baseRadius = "0.6rem"
 baseFontSize = 17
 showWidgetBorder = true
@@ -19,7 +18,7 @@ headingFont = "Schibsted Grotesk:https://fonts.googleapis.com/css2?family=Schibs
 codeFont = "JetBrains Mono:https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap, Consolas, monospace"
 
 [theme.sidebar]
-backgroundColor = "#0A1215"
-secondaryBackgroundColor = "#16232A"
-textColor = "#D5DFDA"
-borderColor = "#22313A"
+backgroundColor = "#F5F7F6"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#17211C"
+borderColor = "#D5DDD8"
