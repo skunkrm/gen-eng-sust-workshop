@@ -3,6 +3,7 @@
 import json
 import re
 import textwrap
+from datetime import date
 from io import BytesIO
 
 import docx
@@ -144,7 +145,7 @@ def _xlsx(titolo, contenuto):
 
 # ---------- Word ----------
 
-def _docx(titolo, contenuto, grafico):
+def _docx(titolo, contenuto, grafico, foto=None):
     d = docx.Document()
     d.add_heading(titolo, 0)
     for tipo, valore in _blocchi(contenuto):
@@ -168,6 +169,11 @@ def _docx(titolo, contenuto, grafico):
             d.add_paragraph(_pulisci(valore))
     if grafico:
         d.add_picture(BytesIO(grafico), width=Inches(6))
+    if foto:
+        d.add_heading("Documentazione fotografica", 2)
+        for i, f in enumerate(foto, 1):
+            d.add_picture(BytesIO(foto_pronta(f)[0]), width=Inches(4.5))
+            d.add_paragraph(f"Foto {i}: fornita dall'utente, non verificata sul posto")
     buf = BytesIO()
     d.save(buf)
     return buf.getvalue()
@@ -198,40 +204,171 @@ def _larghezze_colonne(righe):
     return tuple(max(min(max(n, 6), 45), parola[i] + 2) for i, n in enumerate(lung))
 
 
-def _pdf(titolo, contenuto, grafico):
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
+# Palette "Ardesia", la stessa dell'app
+ARDESIA, LICHENE, AMBRA = (22, 35, 42), (79, 140, 90), (210, 140, 40)
+TESTO, GRIGIO, FILO, RIGA_ALTERNA = (38, 48, 52), (120, 134, 128), (208, 216, 212), (243, 246, 244)
+
+
+def foto_pronta(dati, lato_max=1600):
+    """Raddrizza la foto del telefono (orientamento EXIF), la rimpicciolisce e la restituisce in JPEG."""
+    from PIL import Image, ImageOps
+    img = ImageOps.exif_transpose(Image.open(BytesIO(dati))).convert("RGB")
+    img.thumbnail((lato_max, lato_max))
+    buf = BytesIO()
+    img.save(buf, "JPEG", quality=85)
+    return buf.getvalue(), img.width / img.height
+
+
+class _Report(FPDF):
+    """PDF con intestazione a fascia sulla prima pagina, testatina sulle altre e piè di pagina."""
+
+    def __init__(self, titolo):
+        super().__init__()
+        self.titolo = _latin1(titolo)
+        self.set_margins(18, 16, 18)
+        self.set_auto_page_break(auto=True, margin=18)
+        self.alias_nb_pages()
+
+    def header(self):
+        if self.page_no() == 1:
+            self.set_fill_color(*ARDESIA)
+            self.rect(0, 0, self.w, 38, "F")
+            self.set_fill_color(*LICHENE)
+            self.rect(0, 38, self.w, 1.6, "F")
+            self.set_fill_color(*AMBRA)
+            self.rect(0, 38, 34, 1.6, "F")
+            self.set_xy(18, 10)
+            self.set_text_color(255, 255, 255)
+            self.set_font("Helvetica", "B", 18)
+            self.multi_cell(self.w - 36, 8, self.titolo, new_x="LMARGIN", new_y="NEXT", align="L")
+            self.set_x(18)
+            self.set_text_color(170, 200, 180)
+            self.set_font("Helvetica", size=8.5)
+            self.cell(0, 6, f"Sustainability Copilot - generato il {date.today():%d/%m/%Y}")
+            self.set_y(48)
+        else:
+            self.set_y(8)
+            self.set_text_color(*GRIGIO)
+            self.set_font("Helvetica", size=7.5)
+            self.cell(0, 5, self.titolo)
+            self.set_draw_color(*LICHENE)
+            self.set_line_width(0.4)
+            self.line(18, 14, self.w - 18, 14)
+            self.set_y(20)
+
+    def footer(self):
+        self.set_y(-12)
+        self.set_draw_color(*FILO)
+        self.set_line_width(0.2)
+        self.line(18, self.h - 14, self.w - 18, self.h - 14)
+        self.set_text_color(*GRIGIO)
+        self.set_font("Helvetica", size=7.5)
+        self.cell(0, 6, "Documento generato con l'AI: da verificare prima dell'uso")
+        self.set_x(18)
+        self.cell(0, 6, f"Pagina {self.page_no()} di {{nb}}", align="R")
+
+
+_ETICHETTA = re.compile(r"^([A-Za-zÀ-ÿ'][A-Za-zÀ-ÿ' ()/.]{1,38}):\s*(.*)$")
+
+
+def _riga_testo(pdf, testo):
+    """Paragrafo; le righe 'Etichetta: valore' hanno l'etichetta in grassetto, quelle con ____ diventano firme."""
+    pdf.set_text_color(*TESTO)
+    m = _ETICHETTA.match(testo)
+    if m and len(m.group(1).split()) <= 5:
+        etichetta, valore = m.group(1), m.group(2)
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.cell(pdf.get_string_width(etichetta + ": ") + 1, 5.6, etichetta + ":")
+        if "___" in valore or not valore.strip():  # riga per la firma
+            x, y = pdf.get_x() + 1, pdf.get_y() + 4.6
+            pdf.set_draw_color(*GRIGIO)
+            pdf.set_line_width(0.3)
+            pdf.line(x, y, min(x + 80, pdf.w - 18), y)
+            pdf.ln(9)
+            return
+        pdf.set_font("Helvetica", size=10)
+        pdf.multi_cell(0, 5.6, valore, new_x="LMARGIN", new_y="NEXT", align="L")
+    else:
+        pdf.set_font("Helvetica", size=10)
+        pdf.multi_cell(0, 5.6, testo, new_x="LMARGIN", new_y="NEXT", align="L")
+    pdf.ln(1.2)
+
+
+def _pdf(titolo, contenuto, grafico, foto=None):
+    pdf = _Report(titolo)
     pdf.add_page()
-    pdf.set_font("Helvetica", "B", 16)
-    pdf.set_text_color(31, 78, 90)
-    pdf.multi_cell(0, 9, _latin1(titolo), new_x="LMARGIN", new_y="NEXT")
-    pdf.ln(2)
     for tipo, valore in _blocchi(contenuto):
-        pdf.set_text_color(31, 78, 90) if tipo in ("h1", "h2", "h3") else pdf.set_text_color(0, 0, 0)
+        testo = _latin1(_pulisci(valore)) if tipo != "tabella" else None
+        if tipo == "h1" and testo.strip().lower() == pdf.titolo.strip().lower():
+            continue  # il titolo è già nella fascia
         if tipo == "tabella":
             colonne = max(len(r) for r in valore)
             pdf.set_font("Helvetica", size=8.5 if colonne <= 4 else 7.5)  # tabelle larghe: font più piccolo
+            pdf.set_text_color(*TESTO)
+            pdf.set_draw_color(*FILO)
+            pdf.set_line_width(0.2)
             righe = [[_latin1(_pulisci(c)) for c in r] + [""] * (colonne - len(r)) for r in valore]
-            stile = FontFace(emphasis="BOLD", color=255, fill_color=(31, 78, 90))
-            with pdf.table(first_row_as_headings=True, headings_style=stile, line_height=5.5,
-                           col_widths=_larghezze_colonne(righe)) as tabella:
+            stile = FontFace(emphasis="BOLD", color=255, fill_color=ARDESIA)
+            pdf.set_fill_color(*RIGA_ALTERNA)  # righe alterne grigio chiaro (la tabella usa il colore corrente)
+            with pdf.table(first_row_as_headings=True, headings_style=stile, line_height=5.6, text_align="LEFT",
+                           col_widths=_larghezze_colonne(righe), cell_fill_color=RIGA_ALTERNA,
+                           cell_fill_mode="ROWS", borders_layout="HORIZONTAL_LINES") as tabella:
                 for r in righe:
                     riga = tabella.row()
                     for c in r:
                         riga.cell(c)
+            pdf.ln(4)
+        elif tipo in ("h1", "h2"):
             pdf.ln(3)
-        elif tipo in ("h1", "h2", "h3"):
-            pdf.ln(2)
-            pdf.set_font("Helvetica", "B", {"h1": 13, "h2": 11.5, "h3": 10.5}[tipo])
-            pdf.multi_cell(0, 7, _latin1(_pulisci(valore)), new_x="LMARGIN", new_y="NEXT")
-        else:
+            if pdf.get_y() > pdf.h - 40:  # un titolo non resta da solo in fondo alla pagina
+                pdf.add_page()
+            y = pdf.get_y()
+            pdf.set_fill_color(*LICHENE)
+            pdf.rect(18, y + 1, 2.2, 5.6, "F")
+            pdf.set_x(23)
+            pdf.set_text_color(*ARDESIA)
+            pdf.set_font("Helvetica", "B", 13 if tipo == "h1" else 12)
+            pdf.multi_cell(0, 7.5, testo, new_x="LMARGIN", new_y="NEXT", align="L")
+            pdf.ln(1.5)
+        elif tipo == "h3":
+            pdf.ln(1.5)
+            if pdf.get_y() > pdf.h - 40:
+                pdf.add_page()
+            pdf.set_text_color(*LICHENE)
+            pdf.set_font("Helvetica", "B", 10.5)
+            pdf.multi_cell(0, 6.5, testo, new_x="LMARGIN", new_y="NEXT", align="L")
+        elif tipo == "punto":
+            y = pdf.get_y()
+            pdf.set_fill_color(*LICHENE)
+            pdf.ellipse(19.2, y + 2.1, 1.7, 1.7, "F")
+            pdf.set_x(24)
+            pdf.set_text_color(*TESTO)
             pdf.set_font("Helvetica", size=10)
-            prefisso = "- " if tipo == "punto" else ""
-            pdf.multi_cell(0, 5.5, _latin1(prefisso + _pulisci(valore)), new_x="LMARGIN", new_y="NEXT")
+            pdf.multi_cell(0, 5.6, testo, new_x="LMARGIN", new_y="NEXT", align="L")
             pdf.ln(1)
+        else:
+            _riga_testo(pdf, testo)
     if grafico:
         pdf.ln(3)
         pdf.image(BytesIO(grafico), w=pdf.epw)
+    for i, f in enumerate(foto or [], 1):
+        dati, proporzione = foto_pronta(f)
+        larghezza = min(pdf.epw, 120 * proporzione) if proporzione < 1 else min(pdf.epw, 150)
+        altezza = larghezza / proporzione
+        if pdf.get_y() + altezza + 16 > pdf.h - 18:
+            pdf.add_page()
+        if i == 1:
+            pdf.ln(2)
+            pdf.set_text_color(*ARDESIA)
+            pdf.set_font("Helvetica", "B", 12)
+            pdf.cell(0, 8, "Documentazione fotografica", new_x="LMARGIN", new_y="NEXT", align="L")
+        x = 18 + (pdf.epw - larghezza) / 2
+        pdf.image(BytesIO(dati), x=x, w=larghezza)
+        pdf.set_text_color(*GRIGIO)
+        pdf.set_font("Helvetica", "I", 8)
+        pdf.cell(0, 6, f"Foto {i}: fornita dall'utente, non verificata sul posto", align="C",
+                 new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(2)
     return bytes(pdf.output())
 
 
@@ -350,15 +487,15 @@ def make_dpp_pdf(oggetto, nome_file, titolo, grafico=None):
     return make_document("pdf", nome_file, titolo, contenuto, grafico)
 
 
-def make_document(formato, nome_file, titolo, contenuto, grafico=None):
+def make_document(formato, nome_file, titolo, contenuto, grafico=None, foto=None):
     """Restituisce (bytes, nome del file, tipo MIME)."""
     formato = formato.lower()
     if formato == "xlsx":
         dati = _xlsx(titolo, contenuto)
     elif formato == "docx":
-        dati = _docx(titolo, contenuto, grafico)
+        dati = _docx(titolo, contenuto, grafico, foto)
     elif formato == "pdf":
-        dati = _pdf(titolo, contenuto, grafico)
+        dati = _pdf(titolo, contenuto, grafico, foto)
     elif formato == "json":
         testo = contenuto.strip().removeprefix("```json").removeprefix("```").removesuffix("```")
         try:

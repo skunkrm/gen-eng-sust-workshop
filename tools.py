@@ -161,6 +161,8 @@ TOOLS = [
                     "titolo": {"type": "string"},
                     "contenuto": {"type": "string"},
                     "includi_grafico": {"type": "boolean", "description": "Inserisce l'ultimo grafico creato (pdf e docx)"},
+                    "includi_foto": {"type": "boolean",
+                                     "description": "Inserisce le foto inviate dall'utente (pdf e docx): usalo nei verbali e report su una foto"},
                     "da_json_verificato": {
                         "type": "boolean",
                         "description": "Solo per il PDF del Digital Product Passport: true per generarlo dal JSON appena verificato, "
@@ -310,8 +312,9 @@ def execute_tool(name, args, stato):
                     f" Verifica delle fonti superata: {esito['citazioni_verificate']} citazioni trovate nei documenti, "
                     f"{esito['campi_mancanti']} campi dichiarati mancanti.")
             grafico = stato.get("ultimo_grafico") if args.get("includi_grafico") else None
+            foto = stato.get("foto") if args.get("includi_foto") else None
             dati, nome, mime = make_document(args["formato"], args["nome_file"], args["titolo"],
-                                             args.get("contenuto", ""), grafico)
+                                             args.get("contenuto", ""), grafico, foto)
             evento = ("file", {"data": dati, "filename": nome, "mime": mime,
                                "verifica": stato.pop("ultima_verifica", None)})
             return f"File {nome} creato e disponibile per il download." + stato.pop("esito_verifica_testo", ""), evento

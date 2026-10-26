@@ -105,6 +105,9 @@ if domanda:
         st.markdown(domanda)
         mostra_allegati(indice_utente)
 
+    if immagini:  # le foto restano disponibili per i documenti (es. il verbale con la foto)
+        st.session_state.stato["foto"] = [i["data"] for i in immagini]
+
     # Gli Excel caricati servono così come sono allo strumento calcola_inventario
     st.session_state.stato["file_excel"] = [(f.name, f.getvalue()) for f in documenti
                                             if f.name.lower().endswith(".xlsx")]
