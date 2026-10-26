@@ -38,6 +38,18 @@ tools.py:
 - execute_tool(name, args, stato) -> (risultato testuale per il modello, evento per l'interfaccia o None);
   stato è un dizionario di sessione dove salvi l'ultimo grafico; gli errori tornano al modello come testo
 
+inventario.py (nuovo): l'inventario GHG lo calcola il codice, non il modello
+- calcola(files, stima_mancanti=False): legge l'Excel caricato (fogli Consumi_energia, Flotta, Refrigeranti,
+  Viaggi_lavoro, Fattori_emissione, intestazioni nella terza riga); per ogni sito controlla le serie mensili:
+  un valore oltre 50 volte la mediana è un errore di unità (Wh invece di kWh), va diviso per 1000 e dichiarato;
+  un mese mancante va escluso e dichiarato, oppure stimato con la media se stima_mancanti è true;
+  restituisce controlli_qualita e totali per categoria, scope e sito
+- report_excel(inventario, valori_dichiarati): Excel con fogli di dettaglio e un riepilogo con formule SUM/SUMIF,
+  più il confronto con i valori dichiarati nel bilancio
+- in tools.py due strumenti: calcola_inventario e crea_report_inventario; app.py passa a stato["file_excel"]
+  i file .xlsx caricati (nome e bytes)
+- nel system prompt: niente calcoli a mente, solo numeri restituiti dagli strumenti, tabelle in Markdown
+
 generator.py (tutto in memoria con BytesIO, mai file su disco):
 - make_chart(...) -> PNG con matplotlib (backend "Agg"), barre affiancate se c'è la serie di confronto
 - make_document(formato, nome_file, titolo, contenuto, grafico=None) -> (bytes, nome file, mime)
