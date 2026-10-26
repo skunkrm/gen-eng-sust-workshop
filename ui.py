@@ -469,7 +469,7 @@ def _durata(secondi):
 
 
 def testata(contenitore, modello, documenti, token, dollari, secondi, ultima,
-            inizio=None, token_richiesta=0, costo_richiesta=0.0, tok_in=0, tok_out=0):
+            inizio=None, token_richiesta=0, costo_richiesta=0.0, tok_in=0, tok_out=0, frasi=None):
     """Intestazione con i contatori. token, dollari e secondi sono i totali della sessione;
     durante una richiesta (inizio valorizzato) si aggiungono i valori parziali, e il tempo scorre nel browser."""
     lavoro = inizio is not None
@@ -477,7 +477,7 @@ def testata(contenitore, modello, documenti, token, dollari, secondi, ultima,
     quota = min(100.0, costo_tot / BUDGET_MENSILE * 100)
     prezzo_in, prezzo_out = PREZZI.get(modello, (0, 0))
     stato = "L'agente sta lavorando" if lavoro else "Pronto"
-    frasi = html.escape(str(FRASI).replace("'", '"'))
+    frasi = html.escape(json.dumps(frasi or FRASI, ensure_ascii=False))  # le frasi che si scrivono da sole
 
     if lavoro:  # tempo della richiesta in corso: lo fa scorrere il JavaScript
         tempo = f'<b data-inizio="{inizio * 1000:.0f}" data-base="0">0,0 s</b>'
