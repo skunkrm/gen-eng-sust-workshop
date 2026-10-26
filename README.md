@@ -51,7 +51,7 @@ Su [generative.engine.capgemini.com](https://generative.engine.capgemini.com/) �
 ## Come usare questo repository
 
 ```powershell
-git clone <URL-DI-QUESTO-REPOSITORY>
+git clone https://github.com/skunkrm/gen-eng-sust-workshop.git
 cd gen-eng-sust-workshop
 ```
 
@@ -111,6 +111,27 @@ Domande da provare:
 - *Step 3:* «Calcola le emissioni Scope 1, Scope 2 location-based e Scope 3 delle trasferte del 2025 dai dati di consumo, confrontale con il bilancio e spiegami le differenze. Poi crea un report Excel con i calcoli.»
 - *Step 3:* «Fammi anche un PDF di una pagina per il cliente con un grafico delle emissioni per scope.»
 
+### Digital Product Passport: la staffa SP-220
+
+In `doc_test/dpp/` ci sono i documenti di un componente di Ardesia, la staffa di supporto SP-220:
+
+| File | Contenuto |
+|---|---|
+| `Ardesia_SP220_distinta_base.xlsx` | Dati di prodotto, distinta base con fornitori, consumi di processo per pezzo |
+| `Certificato_Valtrebbia_AV-25-11873.pdf` | Certificato 3.1 dell'acciaieria, con contenuto riciclato e impronta di carbonio da EPD |
+| `Certificato_CSL_CSL-25-0412.pdf` | Certificato 3.1 del centro servizi che fornisce la piastra di rinforzo |
+| `Scheda_tecnica_SP-220.pdf` | Scheda tecnica con istruzioni di smontaggio e fine vita |
+
+Nello step 3, dopo aver caricato i quattro file, cliccate **📦 Prompt Digital Product Passport** nella barra laterale: l'app invia un prompt già pronto che chiede all'agente uno schema preciso, con fonte e citazione per ogni campo.
+
+**Il codice controlla l'AI.** Prima di creare il JSON, lo strumento verifica che ogni citazione dei campi "documentato" compaia davvero nei documenti caricati, e che i campi "mancante" non abbiano un valore. Se la verifica non passa, il file non viene creato e il modello deve correggersi: nel pannello dell'agente vedete quali campi non tornano.
+
+Il DPP è **dimostrativo**: i requisiti di dettaglio per i prodotti in acciaio dipenderanno dall'atto delegato previsto dal Regolamento ESPR (UE) 2024/1781.
+
+### Foto dal vivo
+
+Lo step 3 accetta anche foto (PNG o JPG). Esempio: la foto di una ciabatta sovraccarica o di uno scaffale ingombro, con la domanda «Sei un ispettore HSE: elenca le possibili non conformità visibili nella foto e crea un breve verbale in PDF.» Serve un modello che accetti immagini.
+
 I fattori di emissione nel file Excel sono **indicativi, a scopo formativo**: per un uso reale vanno verificati sull'ultima edizione delle fonti (ISPRA, DESNZ/DEFRA, IPCC).
 
 ---
@@ -139,5 +160,14 @@ Il Generative Engine ha un endpoint negli Stati Uniti e uno in Europa. Con dati 
 | 4 | Bilancio | Scope 1 senza le ricariche di gas refrigeranti del registro F-gas | 1.135 t CO2e contro 1.106 dichiarate |
 | 5 | Bilancio | Scope 3 dichiarato non materiale | Solo le trasferte valgono circa 14,6 t CO2e; per un'azienda metalmeccanica l'acciaio acquistato è di solito la voce principale |
 | 6 | Bilancio | Lacune ESRS E1 | Manca il piano di transizione (E1-1); obiettivo senza anno base né perimetro (E1-4); mix energetico incompleto (E1-5); mancano market-based, Scope 3 e intensità per ricavi, circa 38,7 t CO2e per milione di euro (E1-6) |
+
+**Digital Product Passport della staffa SP-220**
+
+| # | Dove | Cosa deve emergere |
+|---|---|---|
+| 7 | Certificato CSL | La piastra di rinforzo non ha origine, contenuto riciclato né impronta di carbonio: va usato un dato secondario (worldsteel, 1,92 kg CO2/kg) e segnalato |
+| 8 | Distinta base | Manca la dichiarazione del fornitore delle viti, il GTIN è "da assegnare" |
+| 9 | Scheda tecnica | L'affermazione "oltre il 90% di acciaio riciclato" non è supportata: l'unico dato documentato è l'87% del corpo staffa |
+| 10 | Calcolo | Carbon footprint dalla culla al cancello circa 4,45 kg CO2e per pezzo, di cui circa il 31% da dati secondari; esclusi vernice e imballo, per cui mancano fattori |
 
 </details>
