@@ -46,6 +46,9 @@ inventario.py (nuovo): l'inventario GHG lo calcola il codice, non il modello
   restituisce controlli_qualita e totali per categoria, scope e sito
 - report_excel(inventario, valori_dichiarati): Excel con fogli di dettaglio e un riepilogo con formule SUM/SUMIF,
   più il confronto con i valori dichiarati nel bilancio
+- crea_documento accetta da_json_verificato: per il PDF del passaporto il codice lo genera dal JSON appena verificato
+  (tabelle Campo/Valore/Fonte/Stato), così il modello non riscrive il contenuto e si risparmiano token
+- la verifica delle citazioni ignora il formato (maiuscole, virgolette, asterischi, separatori |) ma non il contenuto
 - in tools.py due strumenti: calcola_inventario e crea_report_inventario; app.py passa a stato["file_excel"]
   i file .xlsx caricati (nome e bytes)
 - nel system prompt: niente calcoli a mente, solo numeri restituiti dagli strumenti, tabelle in Markdown
