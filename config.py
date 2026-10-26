@@ -18,7 +18,7 @@ client = OpenAI(
 )
 
 # Il modello è il "motore": per cambiarlo basta cambiare questa riga
-MODEL = "amazon.nova-lite-v1:0"
+MODEL = "anthropic.claude-haiku-5-5"
 
 # Prezzi in dollari per milione di token (input, output): servono per mostrare il costo della sessione
 PREZZI = {
