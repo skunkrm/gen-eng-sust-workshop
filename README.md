@@ -1,4 +1,4 @@
-# ESG Copilot — Workshop
+# Sustainability Copilot — Workshop
 
 Materiale per un workshop pratico della **CoE Sustainability**: come un consulente ESG, senza essere sviluppatore, costruisce con il **Generative Engine di Capgemini** un agente che analizza un bilancio di sostenibilità, calcola le emissioni e trova gli errori.
 
@@ -107,7 +107,7 @@ I documenti contengono **errori e lacune inseriti apposta**. Provate a farli tro
 
 Domande da provare:
 
-- *Step 2:* «Fai una gap analysis del bilancio rispetto all'ESRS E1: per ogni obbligo da E1-1 a E1-9 indica in tabella se è coperto, parziale o mancante, e perché.»
+- *Step 2:* «Fai una gap analysis del bilancio rispetto all'ESRS E1: per ogni obbligo da E1-1 a E1-9 indica in tabella se è coperto, parziale o mancante, e perché. Rispondi solo con la tabella.» Provatela con Nova Lite e con Haiku 5.5.
 - *Step 3:* «Calcola le emissioni Scope 1, Scope 2 location-based e Scope 3 delle trasferte del 2025 dai dati di consumo, confrontale con il bilancio e spiegami le differenze. Poi crea un report Excel con i calcoli.»
 - *Step 3:* «Fammi anche un PDF di una pagina per il cliente con un grafico delle emissioni per scope.»
 
@@ -122,7 +122,7 @@ In `doc_test/dpp/` ci sono i documenti di un componente di Ardesia, la staffa di
 | `Certificato_CSL_CSL-25-0412.pdf` | Certificato 3.1 del centro servizi che fornisce la piastra di rinforzo |
 | `Scheda_tecnica_SP-220.pdf` | Scheda tecnica con istruzioni di smontaggio e fine vita |
 
-Nello step 3, dopo aver caricato i quattro file, cliccate **📦 Prompt Digital Product Passport** nella barra laterale: l'app invia un prompt già pronto che chiede all'agente uno schema preciso, con fonte e citazione per ogni campo.
+Nello step 3, dopo aver caricato i quattro file, scrivete: «Crea il Digital Product Passport della staffa SP-220 dai documenti caricati, in JSON e in PDF.» Lo schema dei campi, con fonte e citazione per ognuno, e le regole per la carbon footprint sono già nelle istruzioni dell'agente (`config.py`).
 
 **Il codice controlla l'AI.** Prima di creare il JSON, lo strumento verifica che ogni citazione dei campi "documentato" compaia davvero nei documenti caricati, e che i campi "mancante" non abbiano un valore. Se la verifica non passa, il file non viene creato e il modello deve correggersi: nel pannello dell'agente vedete quali campi non tornano.
 
@@ -132,7 +132,7 @@ Il DPP è **dimostrativo**: i requisiti di dettaglio per i prodotti in acciaio d
 
 ### Foto dal vivo
 
-Lo step 3 accetta anche foto (PNG o JPG). Esempio: la foto di una ciabatta sovraccarica o di uno scaffale ingombro, con la domanda «Sei un ispettore HSE: elenca le possibili non conformità visibili nella foto e crea un breve verbale in PDF.» Serve un modello che accetti immagini.
+Lo step 3 accetta anche foto (PNG o JPG). Esempio: la foto di una ciabatta sovraccarica o di uno scaffale ingombro, con la domanda «Sei un ispettore HSE: elenca le possibili non conformità visibili nella foto e crea un breve verbale in PDF.» Il verbale lo impagina lo strumento `crea_verbale_hse`: dati del sopralluogo, foto, non conformità con priorità, azioni correttive, limiti e firme. Serve un modello che accetti immagini.
 
 I fattori di emissione nel file Excel sono **indicativi, a scopo formativo**: per un uso reale vanno verificati sull'ultima edizione delle fonti (ISPRA, DESNZ/DEFRA, IPCC).
 
@@ -142,15 +142,25 @@ I fattori di emissione nel file Excel sono **indicativi, a scopo formativo**: pe
 
 | Modello | Quando usarlo |
 |---|---|
-| `amazon.nova-lite-v1:0` | Economico, adatto a domande semplici. Non supporta i tool. |
-| `anthropic.claude-haiku-5-5` | Veloce ed economico (circa 30 volte meno di Sonnet), supporta tool e immagini. Predefinito nello step 3. |
-| `anthropic.claude-sonnet-5-5` | Più preciso e più costoso. Usato nel confronto dello step 2 e come riserva nello step 3. |
+| `amazon.nova-lite-v1:0` | Il più economico. Nello step 2 è il termine di confronto: sbaglia proprio dove serve. Non supporta i tool. |
+| `anthropic.claude-haiku-5-5` | Veloce ed economico (circa 20 volte meno di Sonnet), supporta tool e immagini. Predefinito negli step 1 e 3, e il modello buono del confronto nello step 2. |
+| `anthropic.claude-sonnet-5-5` | Il più potente e il più costoso. Sull'host europeo scrive lentamente: una gap analysis lunga può superare i 3 minuti. |
 
 Il modello si cambia in `config.py`. Il catalogo completo, con i prezzi per milione di token, è nel **Models catalog** dello Studio.
 
 Il Generative Engine ha un endpoint negli Stati Uniti e uno in Europa, ciascuno con il suo budget gratuito. Con dati di clienti europei, o se il budget US è finito, usate quello EU: nel file `.env` impostate `GEN_ENGINE_BASE_URL=https://openai.generative-eu.engine.capgemini.com/v1`.
 
-> **Attenzione ai costi.** I prezzi per milione di token cambiano molto da modello a modello: Sonnet costa circa 30 volte Haiku. Con Sonnet le prove complete dello step 3 possono esaurire i 4 $ mensili in un'ora; con Haiku costano pochi centesimi.
+> **Attenzione ai costi.** I prezzi per milione di token cambiano molto da modello a modello: Sonnet costa circa 20 volte Haiku. Con Sonnet le prove complete dello step 3 possono esaurire i 4 $ mensili in un'ora; con Haiku costano pochi centesimi.
+
+---
+
+## L'interfaccia
+
+Dagli step 1 a 3 l'app ha la stessa veste: tema scuro e chiaro (pulsante ☀ nell'intestazione), sfondo animato e il pannello **Tempi e costi** a destra, richiudibile, con il cronometro di ogni richiesta, i token divisi in input e output e il costo calcolato con i prezzi del modello scelto. Sotto ogni risposta trovate tempo, token, costo e modello di quella richiesta.
+
+La grafica sta tutta in `ui.py` e `.streamlit/config.toml`: non viene dai prompt degli step, ma è stata costruita allo stesso modo, descrivendo all'AI cosa si voleva vedere e rifinendo una richiesta alla volta. Cambiatela come volete: il resto dell'app non ne dipende.
+
+In alto nell'intestazione c'è anche il pulsante per il **tutto schermo** (si esce con Esc).
 
 ---
 
