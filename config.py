@@ -19,7 +19,7 @@ client = OpenAI(
 # Modelli a confronto: il primo è quello di partenza
 MODELS = {
     "amazon.nova-lite-v1:0": "Economico, meno preciso",
-    "anthropic.claude-sonnet-4-6": "Più costoso, più preciso",
+    "anthropic.claude-sonnet-5-5": "Più costoso, più preciso",
 }
 MODEL = "amazon.nova-lite-v1:0"
 

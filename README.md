@@ -143,11 +143,14 @@ I fattori di emissione nel file Excel sono **indicativi, a scopo formativo**: pe
 | Modello | Quando usarlo |
 |---|---|
 | `amazon.nova-lite-v1:0` | Economico, adatto a domande semplici. Non supporta i tool. |
-| `anthropic.claude-sonnet-4-6` | Più preciso, supporta tool e immagini. Usato nello step 3. |
+| `anthropic.claude-haiku-5-5` | Veloce ed economico (circa 30 volte meno di Sonnet), supporta tool e immagini. Predefinito nello step 3. |
+| `anthropic.claude-sonnet-5-5` | Più preciso e più costoso. Usato nel confronto dello step 2 e come riserva nello step 3. |
 
 Il modello si cambia in `config.py`. Il catalogo completo, con i prezzi per milione di token, è nel **Models catalog** dello Studio.
 
-Il Generative Engine ha un endpoint negli Stati Uniti e uno in Europa. Con dati di clienti europei usate quello EU: si imposta con `GEN_ENGINE_BASE_URL` nel file `.env`.
+Il Generative Engine ha un endpoint negli Stati Uniti e uno in Europa, ciascuno con il suo budget gratuito. Con dati di clienti europei, o se il budget US è finito, usate quello EU: nel file `.env` impostate `GEN_ENGINE_BASE_URL=https://openai.generative-eu.engine.capgemini.com/v1`.
+
+> **Attenzione ai costi.** I prezzi per milione di token cambiano molto da modello a modello: Sonnet costa circa 30 volte Haiku. Con Sonnet le prove complete dello step 3 possono esaurire i 4 $ mensili in un'ora; con Haiku costano pochi centesimi.
 
 ---
 
