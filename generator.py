@@ -2,6 +2,7 @@
 
 import json
 import re
+import textwrap
 from io import BytesIO
 
 import docx
@@ -38,9 +39,13 @@ def _blocchi(testo):
         if tabella:
             blocchi.append(("tabella", tabella))
             tabella = []
-        if not r:
+        if not r or re.fullmatch(r"-{3,}|\*{3,}|_{3,}", r):
             continue
-        if r.startswith("## "):
+        if r.startswith("> "):
+            r = r[2:].strip()
+        if r.startswith("### "):
+            blocchi.append(("h3", r[4:]))
+        elif r.startswith("## "):
             blocchi.append(("h2", r[3:]))
         elif r.startswith("# "):
             blocchi.append(("h1", r[2:]))
@@ -52,8 +57,9 @@ def _blocchi(testo):
 
 
 def _pulisci(testo):
-    """Toglie il grassetto markdown."""
-    return testo.replace("**", "")
+    """Toglie la formattazione markdown (grassetto, corsivo, codice)."""
+    testo = testo.replace("**", "").replace("`", "")
+    return re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"\1", testo)
 
 
 def _numero(valore):
@@ -87,7 +93,7 @@ def make_chart(titolo, etichette, valori, unita, serie_confronto=None, nomi_seri
     for b in barre:
         ax.annotate(f"{b.get_height():,.1f}".replace(",", "X").replace(".", ",").replace("X", "."),
                     (b.get_x() + b.get_width() / 2, b.get_height()), ha="center", va="bottom", fontsize=8)
-    ax.set_xticks(list(x), etichette)
+    ax.set_xticks(list(x), [textwrap.fill(str(e), 14) for e in etichette], fontsize=9)
     ax.set_ylabel(unita)
     ax.set_title(titolo, fontsize=12, fontweight="bold", color="#1F4E5A")
     ax.spines[["top", "right"]].set_visible(False)
@@ -123,7 +129,7 @@ def _xlsx(titolo, contenuto):
                         elif isinstance(cella.value, (int, float)):
                             cella.number_format = "#,##0.0"
             ws.append([])
-        elif tipo in ("h1", "h2"):
+        elif tipo in ("h1", "h2", "h3"):
             ws.append([_pulisci(valore)])
             ws.cell(row=ws.max_row, column=1).font = Font(bold=True, size=12 if tipo == "h1" else 11, color=VERDE)
         else:
@@ -146,6 +152,8 @@ def _docx(titolo, contenuto, grafico):
             d.add_heading(_pulisci(valore), 1)
         elif tipo == "h2":
             d.add_heading(_pulisci(valore), 2)
+        elif tipo == "h3":
+            d.add_heading(_pulisci(valore), 3)
         elif tipo == "punto":
             d.add_paragraph(_pulisci(valore), style="List Bullet")
         elif tipo == "tabella":
@@ -168,14 +176,24 @@ def _docx(titolo, contenuto, grafico):
 # ---------- PDF ----------
 
 _SOSTITUZIONI = {"€": "EUR", "’": "'", "‘": "'", "“": '"', "”": '"', "–": "-", "—": "-", "•": "-",
-                 "₂": "2", "³": "3", "…": "...", "≈": "~", "→": "->", "≥": ">=", "≤": "<="}
+                 "₂": "2", "³": "3", "…": "...", "≈": "~", "→": "->", "≥": ">=", "≤": "<=",
+                 "⚠️": "(!)", "⚠": "(!)", "✅": "[OK]", "✔": "[OK]", "❌": "[X]", "✗": "[X]", "−": "-"}
 
 
 def _latin1(testo):
     """I font standard del PDF usano latin-1: sostituiamo i caratteri che non ci stanno."""
     for a, b in _SOSTITUZIONI.items():
         testo = testo.replace(a, b)
-    return testo.encode("latin-1", "replace").decode("latin-1")
+    return testo.encode("latin-1", "ignore").decode("latin-1")  # le emoji rimaste spariscono
+
+
+def _larghezze_colonne(righe):
+    """Larghezze relative delle colonne in base al testo più lungo (con minimo e massimo)."""
+    if righe and [c.strip() for c in righe[0]] == ["Campo", "Valore", "Fonte", "Stato"]:
+        return (22, 30, 30, 22)  # tabelle del passaporto: stesse colonne in tutto il documento
+    colonne = max(len(r) for r in righe)
+    lung = [max(len(r[i]) if i < len(r) else 0 for r in righe) for i in range(colonne)]
+    return tuple(min(max(n, 6), 45) for n in lung)
 
 
 def _pdf(titolo, contenuto, grafico):
@@ -187,21 +205,22 @@ def _pdf(titolo, contenuto, grafico):
     pdf.multi_cell(0, 9, _latin1(titolo), new_x="LMARGIN", new_y="NEXT")
     pdf.ln(2)
     for tipo, valore in _blocchi(contenuto):
-        pdf.set_text_color(31, 78, 90) if tipo in ("h1", "h2") else pdf.set_text_color(0, 0, 0)
+        pdf.set_text_color(31, 78, 90) if tipo in ("h1", "h2", "h3") else pdf.set_text_color(0, 0, 0)
         if tipo == "tabella":
             pdf.set_font("Helvetica", size=8.5)
             colonne = max(len(r) for r in valore)
             righe = [[_latin1(_pulisci(c)) for c in r] + [""] * (colonne - len(r)) for r in valore]
             stile = FontFace(emphasis="BOLD", color=255, fill_color=(31, 78, 90))
-            with pdf.table(first_row_as_headings=True, headings_style=stile, line_height=5.5) as tabella:
+            with pdf.table(first_row_as_headings=True, headings_style=stile, line_height=5.5,
+                           col_widths=_larghezze_colonne(righe)) as tabella:
                 for r in righe:
                     riga = tabella.row()
                     for c in r:
                         riga.cell(c)
             pdf.ln(3)
-        elif tipo in ("h1", "h2"):
+        elif tipo in ("h1", "h2", "h3"):
             pdf.ln(2)
-            pdf.set_font("Helvetica", "B", 13 if tipo == "h1" else 11.5)
+            pdf.set_font("Helvetica", "B", {"h1": 13, "h2": 11.5, "h3": 10.5}[tipo])
             pdf.multi_cell(0, 7, _latin1(_pulisci(valore)), new_x="LMARGIN", new_y="NEXT")
         else:
             pdf.set_font("Helvetica", size=10)
@@ -212,6 +231,84 @@ def _pdf(titolo, contenuto, grafico):
         pdf.ln(3)
         pdf.image(BytesIO(grafico), w=pdf.epw)
     return bytes(pdf.output())
+
+
+def _e_campo(nodo):
+    return isinstance(nodo, dict) and "valore" in nodo and "stato" in nodo
+
+
+def _testo_valore(v):
+    if v is None or v == "":
+        return "-"
+    if isinstance(v, float):
+        return f"{v:,.3f}".rstrip("0").rstrip(".").replace(",", "X").replace(".", ",").replace("X", ".")
+    if isinstance(v, list):
+        return "; ".join(_testo_valore(x) for x in v)
+    if isinstance(v, dict):
+        return "; ".join(f"{k}: {_testo_valore(x)}" for k, x in v.items())
+    return str(v)
+
+
+def _titolo_chiave(k):
+    return str(k).replace("_", " ").strip().capitalize()
+
+
+def _dpp_markdown(oggetto):
+    """Trasforma il JSON del passaporto in markdown semplice: sezioni, tabelle Campo/Valore/Fonte/Stato, elenchi."""
+    righe = []
+
+    def tabella(campi):
+        righe.append("| Campo | Valore | Fonte | Stato |")
+        for nome, c in campi:
+            stato = str(c.get("stato") or "")
+            righe.append(f"| {_titolo_chiave(nome)} | {_testo_valore(c.get('valore'))} | "
+                         f"{_testo_valore(c.get('fonte'))} | {stato} |")
+        righe.append("")
+
+    def sezione(nodo, livello):
+        if _e_campo(nodo):
+            tabella([("valore", nodo)])
+            return
+        if isinstance(nodo, dict):
+            campi = [(k, v) for k, v in nodo.items() if _e_campo(v)]
+            if campi:
+                tabella(campi)
+            for k, v in nodo.items():
+                if _e_campo(v):
+                    continue
+                if isinstance(v, (dict, list)):
+                    righe.append("#" * min(livello, 3) + " " + _titolo_chiave(k))
+                    sezione(v, livello + 1)
+                else:
+                    righe.append(f"{_titolo_chiave(k)}: {_testo_valore(v)}")
+            return
+        if isinstance(nodo, list):
+            if nodo and all(_e_campo(x) for x in nodo):
+                tabella([(x.get("campo") or x.get("nome") or f"voce {i + 1}", x) for i, x in enumerate(nodo)])
+            else:
+                for i, x in enumerate(nodo):
+                    if isinstance(x, dict):
+                        nome = x.get("componente") or x.get("nome") or x.get("campo") or f"Voce {i + 1}"
+                        righe.append("#" * min(livello, 3) + " " + _testo_valore(nome))
+                        sezione({k: v for k, v in x.items() if k not in ("componente", "nome")}, livello + 1)
+                    else:
+                        righe.append(f"- {_testo_valore(x)}")
+            righe.append("")
+            return
+        righe.append(_testo_valore(nodo))
+
+    for k, v in oggetto.items():
+        righe.append("## " + _titolo_chiave(k))
+        sezione(v, 3)
+        righe.append("")
+    return "\n".join(righe)
+
+
+def make_dpp_pdf(oggetto, nome_file, titolo, grafico=None):
+    """PDF del passaporto generato dal codice, a partire dal JSON già verificato."""
+    contenuto = ("Documento dimostrativo generato dal codice a partire dal JSON verificato. "
+                 "I requisiti di dettaglio per l'acciaio dipendono dall'atto delegato ESPR.\n\n" + _dpp_markdown(oggetto))
+    return make_document("pdf", nome_file, titolo, contenuto, grafico)
 
 
 def make_document(formato, nome_file, titolo, contenuto, grafico=None):

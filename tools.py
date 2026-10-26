@@ -9,7 +9,7 @@ import json
 import re
 
 import inventario
-from generator import make_chart, make_document
+from generator import make_chart, make_document, make_dpp_pdf
 
 # Fattori di emissione: stessi valori del foglio "Fattori_emissione" del file di test.
 # Valori indicativi a scopo formativo: per un uso reale verificare l'ultima edizione delle fonti.
@@ -161,8 +161,13 @@ TOOLS = [
                     "titolo": {"type": "string"},
                     "contenuto": {"type": "string"},
                     "includi_grafico": {"type": "boolean", "description": "Inserisce l'ultimo grafico creato (pdf e docx)"},
+                    "da_json_verificato": {
+                        "type": "boolean",
+                        "description": "Solo per il PDF del Digital Product Passport: true per generarlo dal JSON appena verificato, "
+                                       "senza riscrivere il contenuto (lascia vuoto contenuto)",
+                    },
                 },
-                "required": ["formato", "nome_file", "titolo", "contenuto"],
+                "required": ["formato", "nome_file", "titolo"],
             },
         },
     },
@@ -211,11 +216,12 @@ def calcola_emissioni(voci):
 # ---------- verifica delle fonti: il codice controlla l'AI ----------
 
 def _normalizza(testo):
-    """Minuscole, virgolette uniformi, spazi e a capo compattati: per confrontare citazioni e documenti."""
-    testo = str(testo).lower()
-    for a, b in (("’", "'"), ("‘", "'"), ("“", '"'), ("”", '"'), ("\u00a0", " ")):
-        testo = testo.replace(a, b)
-    return re.sub(r"\s+", " ", testo).strip()
+    """Per confrontare citazioni e documenti ignoriamo il formato, non il contenuto:
+    minuscole, niente virgolette, asterischi e separatori | delle tabelle, spazi compattati."""
+    testo = str(testo).lower().replace("\u00a0", " ").replace("|", " ")
+    testo = re.sub(r"[«»\"“”'’‘`*]", "", testo)
+    testo = re.sub(r"\s+", " ", testo).strip()
+    return testo.strip(" .,;:")
 
 
 def _campi_con_stato(nodo, percorso=""):
@@ -236,8 +242,8 @@ def verifica_fonti(oggetto, documenti):
     testo_documenti = _normalizza(documenti)
     verificati, errori, mancanti = 0, [], 0
     for percorso, campo in _campi_con_stato(oggetto):
-        stato = str(campo.get("stato", "")).lower()
-        if stato == "documentato":
+        stato = str(campo.get("stato", "")).lower().strip()
+        if stato.startswith("documentato"):
             citazione = _normalizza(campo.get("citazione") or "")
             if len(citazione) < 3:
                 errori.append(f"{percorso}: manca la citazione dal documento")
@@ -245,7 +251,7 @@ def verifica_fonti(oggetto, documenti):
                 errori.append(f"{percorso}: citazione non trovata nei documenti ('{campo.get('citazione')}')")
             else:
                 verificati += 1
-        elif stato == "mancante":
+        elif stato.startswith("mancante"):
             mancanti += 1
             if campo.get("valore") not in (None, "", []):
                 errori.append(f"{percorso}: è segnato come mancante ma ha un valore")
@@ -284,8 +290,14 @@ def execute_tool(name, args, stato):
             return "Grafico creato e mostrato all'utente.", ("chart", {"png": png, "titolo": args["titolo"]})
 
         if name == "crea_documento":
+            if args.get("da_json_verificato") and args["formato"] == "pdf":
+                if "ultimo_dpp" not in stato:
+                    return "Nessun JSON verificato: crea prima il passaporto in formato json.", None
+                grafico = stato.get("ultimo_grafico") if args.get("includi_grafico") else None
+                dati, nome, mime = make_dpp_pdf(stato["ultimo_dpp"], args["nome_file"], args["titolo"], grafico)
+                return f"File {nome} creato dal JSON verificato.", ("file", {"data": dati, "filename": nome, "mime": mime})
             if args["formato"] == "json" and stato.get("documenti"):
-                testo = args["contenuto"].strip().removeprefix("```json").removeprefix("```").removesuffix("```")
+                testo = args.get("contenuto", "").strip().removeprefix("```json").removeprefix("```").removesuffix("```")
                 esito = verifica_fonti(json.loads(testo), stato["documenti"])
                 if not esito["ok"]:
                     elenco = "\n".join(f"- {e}" for e in esito["errori"][:15])
@@ -293,9 +305,10 @@ def execute_tool(name, args, stato):
                             f"{elenco}\nCorreggi: copia le citazioni parola per parola dai documenti, "
                             "oppure segna il campo come mancante con valore null. Poi riprova."), ("check", esito)
                 stato["ultima_verifica"] = esito
+                stato["ultimo_dpp"] = json.loads(testo)
             grafico = stato.get("ultimo_grafico") if args.get("includi_grafico") else None
             dati, nome, mime = make_document(args["formato"], args["nome_file"], args["titolo"],
-                                             args["contenuto"], grafico)
+                                             args.get("contenuto", ""), grafico)
             evento = ("file", {"data": dati, "filename": nome, "mime": mime,
                                "verifica": stato.pop("ultima_verifica", None)})
             return f"File {nome} creato e disponibile per il download.", evento

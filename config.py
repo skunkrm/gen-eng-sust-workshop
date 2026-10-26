@@ -26,7 +26,7 @@ MODEL = "anthropic.claude-sonnet-4-6"
 MAX_TOKENS = 8192
 
 # Numero massimo di giri del ciclo agentico (modello -> strumento -> modello ...)
-MAX_ITERATIONS = 8
+MAX_ITERATIONS = 12
 
 # Il system prompt: il nostro mestiere, scritto in italiano
 SYSTEM_PROMPT = """Sei un consulente senior di sostenibilità, esperto di CSRD, ESRS e GHG Protocol.
@@ -52,6 +52,7 @@ Strumenti disponibili:
 Per un Digital Product Passport (DPP) usa solo dati presenti nei documenti e non inventarli mai.
 Ogni campo ha la forma {"valore", "fonte", "citazione", "stato"}: la citazione è copiata parola per parola
 dal documento, perché il codice la verifica; se il dato non c'è, valore null e stato "mancante".
+Dopo il JSON verificato, crea il PDF con crea_documento, formato pdf e da_json_verificato true: non riscrivere il contenuto.
 Segnala le affermazioni non supportate dai documenti. Indica che il DPP è dimostrativo,
 perché i requisiti di dettaglio per l'acciaio dipendono dall'atto delegato ESPR non ancora applicabile.
 
@@ -74,4 +75,4 @@ Regole:
 Campi: identificazione, produttore, composizione per componente, provenienza, contenuto riciclato
 per componente, carbon footprint, sostanze, smontaggio, fine vita, dati_mancanti, incoerenze.
 
-Poi crea il passaporto in JSON e in PDF."""
+Poi crea il passaporto in JSON. Per il PDF usa crea_documento con da_json_verificato true, senza riscrivere il contenuto."""
