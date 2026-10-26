@@ -7,7 +7,7 @@ può mostrare all'utente cosa sta facendo l'agente. Tipi di evento:
   ("chart", dati)   grafico creato
   ("file", dati)    file creato, da scaricare
   ("check", dati)   verifica delle fonti non superata
-  ("tokens", n)     token usati da una chiamata
+  ("tokens", (input, output))  token usati da una chiamata
   ("done", testo)   risposta finale
 """
 
@@ -62,7 +62,7 @@ def reply(message, history, knowledge_base="", model=MODEL, images=None, stato=N
                 model=model, messages=messages, tools=TOOLS, max_tokens=MAX_TOKENS,
             )
             if risposta.usage:
-                yield ("tokens", risposta.usage.total_tokens)
+                yield ("tokens", (risposta.usage.prompt_tokens, risposta.usage.completion_tokens))
             scelta = risposta.choices[0]
             msg = scelta.message
 
@@ -121,6 +121,6 @@ def reply(message, history, knowledge_base="", model=MODEL, images=None, stato=N
         semplici = build_messages(message, history, knowledge_base)
         risposta = client.chat.completions.create(model=model, messages=semplici, max_tokens=MAX_TOKENS)
         if risposta.usage:
-            yield ("tokens", risposta.usage.total_tokens)
+            yield ("tokens", (risposta.usage.prompt_tokens, risposta.usage.completion_tokens))
         yield ("done", (risposta.choices[0].message.content or "")
                + "\n\n---\n⚠️ *Questo modello non supporta gli strumenti: calcoli, grafici e file non sono disponibili.*")

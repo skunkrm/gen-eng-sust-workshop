@@ -132,24 +132,11 @@ html[data-esg-tema="chiaro"] .esg-testata { background: linear-gradient(140deg, 
   background: #7DCB8A; animation: esg-cursore 1s steps(1) infinite; }
 @keyframes esg-cursore { 50% { opacity: 0; } }
 
-/* ---------- pannello dei contatori, fisso a destra e richiudibile ---------- */
-.esg-pannello { position: fixed; top: 4.2rem; right: 1.2rem; width: 290px; z-index: 999990; max-height: calc(100vh - 6rem);
-  overflow-y: auto; padding: 1rem; border-radius: 1.1rem; color: #E6EEEA;
-  background: rgba(12, 22, 27, .74); border: 1px solid rgba(255, 255, 255, .08);
-  backdrop-filter: blur(20px) saturate(150%); -webkit-backdrop-filter: blur(20px) saturate(150%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 30px 60px -30px rgba(0, 0, 0, .8);
-  transition: transform .55s cubic-bezier(.16, 1, .3, 1), opacity .4s; }
-html[data-esg-pannello="chiuso"] .esg-pannello { transform: translateX(calc(100% + 2rem)); opacity: 0; pointer-events: none; }
-.esg-pannello-testa { display: flex; justify-content: space-between; align-items: center; margin-bottom: .7rem; }
-.esg-pannello-testa h4 { margin: 0; padding: 0; font-size: .95rem; font-weight: 700; color: #CDEFD3; }
-.esg-chiudi { all: unset; cursor: pointer; width: 2rem; height: 2rem; display: grid; place-items: center; border-radius: .6rem;
-  color: #E6EEEA; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .1); font-size: 1rem; }
-.esg-chiudi:hover { background: rgba(255, 255, 255, .12); }
-.esg-strumenti { display: grid; gap: .6rem; }
-.esg-strumento { padding: .75rem .9rem; border-radius: .8rem; background: rgba(255, 255, 255, .04);
+.esg-strumenti { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .8rem; margin-top: 1.2rem; align-items: start; }
+.esg-strumento { padding: .85rem 1rem; border-radius: .8rem; background: rgba(255, 255, 255, .04);
   border: 1px solid rgba(255, 255, 255, .07); }
-.esg-strumento span { display: block; font-size: .76rem; color: #8FA79C; }
-.esg-strumento b { display: block; margin-top: .2rem; font-size: 1.45rem; font-weight: 700; color: #FFFFFF;
+.esg-strumento span { display: block; font-size: .78rem; color: #8FA79C; }
+.esg-strumento b { display: block; margin-top: .25rem; font-size: 1.55rem; font-weight: 700; color: #FFFFFF;
   font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
 .esg-strumento.costo { background: linear-gradient(160deg, rgba(240, 174, 78, .14), rgba(240, 174, 78, .03));
   border-color: rgba(240, 174, 78, .28); }
@@ -159,31 +146,11 @@ html[data-esg-pannello="chiuso"] .esg-pannello { transform: translateX(calc(100%
   background: linear-gradient(90deg, #7DCB8A, #F0AE4E); box-shadow: 0 0 12px rgba(240, 174, 78, .6);
   transition: width 1s cubic-bezier(.16, 1, .3, 1); }
 .esg-budget-nota { font-size: .72rem; color: #8FA79C; margin-top: .3rem; }
-.esg-strumento small, .esg-strumento small span { display: block; margin-top: .25rem; font-size: .74rem; color: #8FA79C; line-height: 1.3; }
-.esg-strumento.tempo b { color: #CDEFD3; font-size: 1.9rem; }
-.esg-pannello.lavoro .esg-strumento.tempo { border-color: rgba(240, 174, 78, .45); box-shadow: 0 0 24px -6px rgba(240, 174, 78, .5); }
-.esg-pannello.lavoro::after { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; pointer-events: none;
-  background: conic-gradient(from var(--angolo), transparent 0 62%, #F0AE4E 78%, #7DCB8A 90%, transparent 100%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); animation: esg-gira 2.2s linear infinite; }
-
-/* pannello chiuso: resta una pillola con tempo e costo, che lo riapre */
-.esg-pillola { all: unset; cursor: pointer; position: fixed; top: 4.2rem; right: 1.2rem; z-index: 999990;
-  display: flex; align-items: center; gap: .7rem; padding: .5rem .9rem .5rem .7rem; border-radius: 99px;
-  background: rgba(12, 22, 27, .8); color: #E6EEEA; border: 1px solid rgba(240, 174, 78, .3);
-  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); font-size: .85rem; font-variant-numeric: tabular-nums;
-  box-shadow: 0 16px 40px -16px rgba(0, 0, 0, .7); opacity: 0; transform: translateX(1rem); pointer-events: none;
-  transition: opacity .4s .15s, transform .55s .15s cubic-bezier(.16, 1, .3, 1); }
-html[data-esg-pannello="chiuso"] .esg-pillola { opacity: 1; transform: none; pointer-events: auto; }
-.esg-pillola b { color: #FFFFFF; font-weight: 700; } .esg-pillola .c { color: #FFC46E; }
-.esg-pillola i { width: .5rem; height: .5rem; border-radius: 50%; background: #7DCB8A; box-shadow: 0 0 10px #7DCB8A; }
-.esg-pillola.lavoro i { background: #F0AE4E; animation: esg-impulso 1.1s ease-out infinite; }
-
-/* con il pannello aperto il contenuto lascia spazio a destra (sugli schermi larghi) */
-@media (min-width: 1200px) {
-  html:not([data-esg-pannello="chiuso"]) .block-container { padding-right: 330px !important; }
-  html:not([data-esg-pannello="chiuso"]) [data-testid="stBottomBlockContainer"] { padding-right: 330px !important; }
-}
+.esg-strumento small, .esg-strumento small span { display: block; margin-top: .3rem; font-size: .74rem; color: #8FA79C; line-height: 1.3; }
+.esg-strumento.tempo b { color: #CDEFD3; }
+.esg-testata.lavoro .esg-strumento.tempo { border-color: rgba(240, 174, 78, .35); }
+@media (max-width: 1100px) { .esg-strumenti { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .esg-strumenti { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 /* misure sotto ogni risposta */
 .esg-misure { display: flex; flex-wrap: wrap; gap: .45rem; margin: .2rem 0 .7rem; }
@@ -273,6 +240,19 @@ html[data-esg-tema="chiaro"] [data-testid="stChatMessage"] [data-testid="stExpan
 [data-testid="stSidebar"] h3 { font-size: .9rem; font-weight: 700; color: #8FA79C; margin-top: .6rem; }
 
 
+/* ---------- HUD: quando l'intestazione esce dallo schermo, token e costo restano visibili ---------- */
+#esg-hud { position: fixed; top: 1rem; right: 1.2rem; z-index: 999999; display: flex; align-items: center; gap: .9rem;
+  padding: .55rem 1rem .55rem .7rem; border-radius: 99px; background: rgba(12, 22, 27, .78); color: #E6EEEA;
+  border: 1px solid rgba(240, 174, 78, .35); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 16px 40px -16px rgba(0, 0, 0, .7), 0 0 30px -8px rgba(240, 174, 78, .35);
+  font-size: .85rem; font-variant-numeric: tabular-nums; opacity: 0; transform: translateY(-14px) scale(.96);
+  pointer-events: none; transition: opacity .45s, transform .6s cubic-bezier(.16, 1, .3, 1); }
+html[data-esg-lavoro] #esg-hud.fuori { opacity: 1; transform: none; }
+#esg-hud .orbita { width: 1.5rem; height: 1.5rem; border-radius: 50%; position: relative;
+  border: 2px solid rgba(125, 203, 138, .18); border-top-color: #7DCB8A; border-right-color: #F0AE4E; animation: esg-ruota .9s linear infinite; }
+@keyframes esg-ruota { to { transform: rotate(360deg); } }
+#esg-hud b { font-weight: 700; color: #FFFFFF; }
+#esg-hud .c { color: #FFC46E; }
 :focus-visible { outline: 2px solid var(--lichene) !important; outline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -296,13 +276,6 @@ JS = r"""
   W.esgPronto = true;
   setTimeout(() => D.documentElement.setAttribute('data-esg-visto', ''), 1500);
 
-  try { if (localStorage.getItem('esg-pannello') === 'chiuso') D.documentElement.dataset.esgPannello = 'chiuso'; } catch (e) {}
-  D.addEventListener('click', ev => {
-    if (!ev.target.closest('[data-esg-pannello-pulsante]')) return;
-    const chiuso = D.documentElement.dataset.esgPannello === 'chiuso' ? 'aperto' : 'chiuso';
-    D.documentElement.dataset.esgPannello = chiuso;
-    try { localStorage.setItem('esg-pannello', chiuso); } catch (e) {}
-  });
   D.addEventListener('click', ev => {
     const b = ev.target.closest('[data-esg-tema-pulsante]');
     if (!b) return;
@@ -368,6 +341,22 @@ JS = r"""
   if (lento) { for (let i = 0; i < 120; i++) passo(); } else requestAnimationFrame(passo);
 
 
+  // ---------- HUD in alto a destra mentre l'agente lavora ----------
+  const hud = D.createElement('div'); hud.id = 'esg-hud';
+  hud.innerHTML = '\u003cdiv class="orbita">\u003c/div>\u003cspan>L\'agente lavora\u003c/span>\u003cspan>Token \u003cb class="t">0\u003c/b>\u003c/span>\u003cspan>Costo \u003cb class="c">0 ¢\u003c/b>\u003c/span>';
+  D.body.appendChild(hud);
+  const segui = () => {
+    const testata = D.querySelector('.esg-testata');
+    if (testata) {
+      const r = testata.getBoundingClientRect();
+      hud.classList.toggle('fuori', r.bottom < 40);
+      const t = testata.querySelector('[data-chiave="token"]'), c = testata.querySelector('[data-chiave="costo"]');
+      if (t) hud.querySelector('.t').textContent = t.textContent;
+      if (c) hud.querySelector('.c').textContent = c.textContent;
+    }
+    setTimeout(segui, 120);
+  };
+  segui();
 
   // ---------- cronometro della richiesta in corso e del totale ----------
   const durata = s => s < 60 ? s.toFixed(1).replace('.', ',') + ' s'
@@ -495,11 +484,6 @@ def testata(contenitore, modello, documenti, token, dollari, secondi, ultima,
         tempo, tempo_nota = "<b>–</b>", "<span>Nessuna richiesta</span>"
         nota_token = nota_costo = "Nessuna richiesta"
 
-    if lavoro:
-        pillola_tempo = f'<b data-inizio="{inizio * 1000:.0f}" data-base="0">0,0 s</b>'
-    else:
-        pillola_tempo = f"<b>{_durata(ultima['secondi']) if ultima else '–'}</b>"
-
     contenitore.html(f"""
 <div class="esg-testata esg-vetro{' lavoro' if lavoro else ''}">
   <div class="esg-alto">
@@ -508,29 +492,20 @@ def testata(contenitore, modello, documenti, token, dollari, secondi, ultima,
   </div>
   <h1 class="esg-titolo">{NOME}</h1>
   <p class="esg-macchina">L'agente <b data-frasi="{frasi}"></b></p>
-</div>
-
-<aside class="esg-pannello{' lavoro' if lavoro else ''}" aria-label="Contatori della sessione">
-  <div class="esg-pannello-testa"><h4>Tempi e costi</h4>
-    <button class="esg-chiudi" data-esg-pannello-pulsante title="Chiudi il pannello" aria-label="Chiudi il pannello">›</button></div>
   <div class="esg-strumenti">
+    <div class="esg-strumento"><span>Modello</span><b>{html.escape(nome_breve(modello))}</b>
+      <small>{f"{prezzo_in:g}".replace(".", ",")} $ in / {f"{prezzo_out:g}".replace(".", ",")} $ out per milione di token</small></div>
+    <div class="esg-strumento"><span>Documenti letti</span><b>{documenti}</b><small>nella memoria dell'agente</small></div>
     <div class="esg-strumento tempo"><span>Tempo richiesta</span>{tempo}<small>{tempo_nota}</small></div>
+    <div class="esg-strumento"><span>Token della sessione</span>
+      <b data-chiave="token" data-valore="{token_tot}" data-formato="int">{_intero(token_tot)}</b><small>{nota_token}</small></div>
     <div class="esg-strumento costo"><span>Costo della sessione</span>
       <b data-chiave="costo" data-valore="{costo_tot}" data-formato="costo">{_costo(costo_tot)}</b><small>{nota_costo}</small>
       <div class="esg-budget" style="--quota:{quota:.3f}%"><i></i></div>
       <div class="esg-budget-nota">{f"{quota:.2f}".replace(".", ",")}% del budget mensile di 4 $</div>
     </div>
-    <div class="esg-strumento"><span>Token della sessione</span>
-      <b data-chiave="token" data-valore="{token_tot}" data-formato="int">{_intero(token_tot)}</b><small>{nota_token}</small></div>
-    <div class="esg-strumento"><span>Modello</span><b>{html.escape(nome_breve(modello))}</b>
-      <small>{f"{prezzo_in:g}".replace(".", ",")} $ in / {f"{prezzo_out:g}".replace(".", ",")} $ out per milione di token</small></div>
-    <div class="esg-strumento"><span>Documenti letti</span><b>{documenti}</b><small>nella memoria dell'agente</small></div>
   </div>
-</aside>
-
-<button class="esg-pillola{' lavoro' if lavoro else ''}" data-esg-pannello-pulsante title="Apri tempi e costi" aria-label="Apri tempi e costi">
-  <i></i>{pillola_tempo}<b class="c">{_costo(costo_tot)}</b><span>‹</span>
-</button>""")
+</div>""")
 
 
 def misure(a):

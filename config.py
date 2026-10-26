@@ -25,6 +25,13 @@ MODELS = {
 }
 MODEL = "anthropic.claude-haiku-5-5"
 
+# Prezzi in dollari per milione di token (input, output): servono per mostrare il costo della sessione
+PREZZI = {
+    "anthropic.claude-haiku-5-5": (0.11, 0.55),
+    "anthropic.claude-sonnet-5-5": (2.20, 11.0),
+    "amazon.nova-lite-v1:0": (0.0824, 0.3193),
+}
+
 MAX_TOKENS = 16000
 
 # Numero massimo di giri del ciclo agentico (modello -> strumento -> modello ...)
@@ -51,31 +58,21 @@ Strumenti disponibili:
 - crea_grafico: grafico a barre da mostrare all'utente;
 - crea_documento: file scaricabile, nel formato esatto che l'utente chiede (pdf, docx, xlsx o json).
 
-Per un Digital Product Passport (DPP) usa solo dati presenti nei documenti e non inventarli mai.
-Ogni campo ha la forma {"valore", "fonte", "citazione", "stato"}: la citazione è un estratto BREVE (5-12 parole)
-copiato parola per parola dal documento, perché il codice la verifica; se il dato non c'è, valore null e stato "mancante".
-Se la verifica fallisce, richiama subito lo strumento con le citazioni corrette: non fermarti a spiegare.
-Dopo il JSON verificato, crea il PDF con crea_documento, formato pdf e da_json_verificato true: non riscrivere il contenuto.
-Segnala le affermazioni non supportate dai documenti. Indica che il DPP è dimostrativo,
-perché i requisiti di dettaglio per l'acciaio dipendono dall'atto delegato ESPR non ancora applicabile.
+Quando ti chiedono un Digital Product Passport (DPP) di un prodotto:
+1. usa SOLO i documenti caricati e non inventare mai un dato;
+2. ogni campo ha la forma {"valore", "fonte", "citazione", "stato"}: fonte è il nome del file, citazione è un estratto
+   BREVE (5-12 parole) copiato parola per parola dal documento, perché il codice la verifica; stato è
+   "documentato", "calcolato", "dato secondario" o "mancante"; se il dato non c'è, valore null e stato "mancante";
+3. un dato di un componente non vale per un altro (il riciclato di un componente non vale per gli altri);
+4. le emissioni si calcolano solo con calcola_emissioni e i fattori secondari vanno marcati come tali;
+5. se due documenti dicono cose diverse, riporta entrambi i valori in "incoerenze";
+6. sezioni: identificazione, produttore, composizione per componente, provenienza, contenuto riciclato
+   per componente, carbon footprint, sostanze, smontaggio, fine vita, dati_mancanti, incoerenze;
+7. crea prima il JSON con crea_documento; se la verifica fallisce, richiama subito lo strumento con le citazioni
+   corrette, senza fermarti a spiegare; poi crea il PDF con crea_documento, formato pdf e da_json_verificato true,
+   senza riscrivere il contenuto;
+8. segnala le affermazioni non supportate dai documenti e indica che il DPP è dimostrativo, perché i requisiti
+   di dettaglio dipendono dagli atti delegati del Regolamento ESPR.
 
 Se l'utente manda una foto, descrivi solo ciò che vedi davvero e segnala i dubbi.
 Se un'informazione non è nei documenti o non la conosci, dillo esplicitamente."""
-
-
-# Prompt pronto per la demo del Digital Product Passport (pulsante nella barra laterale)
-PROMPT_DPP = """Genera il Digital Product Passport della staffa SP-220 usando SOLO i documenti caricati.
-
-Regole:
-1. Ogni campo ha questa forma:
-   {"valore": ..., "fonte": "nome del file", "citazione": "estratto breve (5-12 parole) copiato parola per parola dal documento",
-    "stato": "documentato" | "calcolato" | "dato secondario" | "mancante"}
-2. Se un dato non è nei documenti: valore null e stato "mancante". Non stimarlo e non dedurlo.
-3. Un dato di un componente non vale per un altro: il riciclato del corpo staffa non vale per la piastra.
-4. Le emissioni si calcolano solo con calcola_emissioni; i fattori secondari vanno marcati come tali.
-5. Se due documenti dicono cose diverse, riporta entrambi i valori in "incoerenze".
-
-Campi: identificazione, produttore, composizione per componente, provenienza, contenuto riciclato
-per componente, carbon footprint, sostanze, smontaggio, fine vita, dati_mancanti, incoerenze.
-
-Poi crea il passaporto in JSON. Per il PDF usa crea_documento con da_json_verificato true, senza riscrivere il contenuto."""

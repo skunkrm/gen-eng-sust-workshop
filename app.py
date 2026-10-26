@@ -1,16 +1,20 @@
-"""ESG Copilot: l'agente che legge, calcola e crea report. Avvio: uv run streamlit run app.py"""
+"""Sustainability Copilot: l'agente che legge, calcola e crea report. Avvio: uv run streamlit run app.py"""
+
+import time
 
 import streamlit as st
 
-from config import MODEL, MODELS, PROMPT_DPP
+from config import MODEL, MODELS, PREZZI
 from engine import reply
 from extractor import build_knowledge_base
+from ui import AVATAR_AGENTE, AVATAR_UTENTE, NOME, misure, stile, testata
 
-st.set_page_config(page_title="ESG Copilot", page_icon="🌱", layout="wide")
-st.title("🌱 ESG Copilot")
-st.caption("Il consulente CSRD ed ESRS che legge i documenti, calcola le emissioni e prepara i report")
+st.set_page_config(page_title=NOME, page_icon="🌱", layout="wide", initial_sidebar_state="expanded")
+stile()
+intestazione = st.empty()  # la riempiamo dopo la sidebar, quando sappiamo modello e documenti
 
-DEFAULT = {"messages": [], "tokens": 0, "kb_text": "", "kb_names": [], "allegati": {},
+# tokens, costo e secondi: totali della sessione; ultima: misure dell'ultima richiesta
+DEFAULT = {"messages": [], "tokens": 0, "costo": 0.0, "secondi": 0.0, "ultima": {}, "kb_text": "", "kb_names": [], "allegati": {},
            "foto_inviate": set(), "stato": {}}
 for chiave, valore in DEFAULT.items():
     if chiave not in st.session_state:
@@ -39,15 +43,21 @@ with st.sidebar:
     if nuove_foto:
         st.info(f"{len(nuove_foto)} foto verranno inviate con la prossima domanda")
 
-    st.subheader("Prompt pronti")
-    if st.button("📦 Prompt Digital Product Passport"):
-        st.session_state.prompt_pronto = PROMPT_DPP
-
-    st.metric("Token usati in questa sessione", f"{st.session_state.tokens:,}".replace(",", "."))
+    st.subheader("Sessione")
     if st.button("Nuova conversazione"):
-        for chiave in ("messages", "allegati", "stato"):
+        for chiave in ("messages", "allegati", "stato"):  # token, costo e tempo restano: sono della sessione
             st.session_state[chiave] = type(DEFAULT[chiave])()
         st.rerun()
+
+
+def aggiorna_testata(inizio=None, token_richiesta=0, costo_richiesta=0.0):
+    """inizio: istante di partenza della richiesta in corso (None se l'agente è fermo)."""
+    s = st.session_state
+    testata(intestazione, modello, len(s.kb_names), s.tokens, s.costo, s.secondi, s.ultima,
+            inizio=inizio, token_richiesta=token_richiesta, costo_richiesta=costo_richiesta)
+
+
+aggiorna_testata()
 
 
 def mostra_allegati(indice):
@@ -61,22 +71,34 @@ def mostra_allegati(indice):
                                mime=a["mime"], key=f"f{indice}_{i}")
         elif a["tipo"] == "foto":
             st.image(a["data"], width=260)
+        elif a["tipo"] == "misure":
+            misure(a)
         elif a["tipo"] == "passi":
             with st.expander("Passaggi dell'agente"):
                 st.markdown("\n".join(f"- {r}" for r in a["righe"]))
 
 
+def avatar(ruolo):
+    return AVATAR_UTENTE if ruolo == "user" else AVATAR_AGENTE
+
+
+domanda = st.chat_input("Chiedi qualcosa al consulente di sostenibilità…")
+
+# Pagina iniziale: solo un invito, la domanda la scrive l'utente
+if not st.session_state.messages and not domanda:
+    st.html('<div class="esg-invito"><h2>Da dove partiamo?</h2>'
+            '<p>Carica i documenti nella barra a sinistra e scrivi la tua domanda qui sotto.</p></div>')
+
 for indice, m in enumerate(st.session_state.messages):
-    with st.chat_message(m["role"]):
+    with st.chat_message(m["role"], avatar=avatar(m["role"])):
         st.markdown(m["content"])
         mostra_allegati(indice)
 
-domanda = st.chat_input("Chiedi qualcosa al consulente ESG…") or st.session_state.pop("prompt_pronto", None)
 if domanda:
     immagini = [{"data": f.getvalue(), "mime": f.type or "image/jpeg", "name": f.name} for f in nuove_foto]
     indice_utente = len(st.session_state.messages)
     st.session_state.allegati[indice_utente] = [{"tipo": "foto", "data": i["data"]} for i in immagini]
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar=AVATAR_UTENTE):
         st.markdown(domanda)
         mostra_allegati(indice_utente)
 
@@ -86,7 +108,10 @@ if domanda:
 
     indice_risposta = indice_utente + 1
     allegati, nomi_file, testo, passi = [], [], "", []
-    with st.chat_message("assistant"):
+    inizio = time.time()
+    token_richiesta, costo_richiesta = 0, 0.0
+    aggiorna_testata(inizio)
+    with st.chat_message("assistant", avatar=AVATAR_AGENTE):
         with st.status("L'agente sta lavorando…", expanded=True) as pannello:
             try:
                 for tipo, dati in reply(domanda, st.session_state.messages, st.session_state.kb_text,
@@ -122,14 +147,26 @@ if domanda:
                             passi.append(f"🔎 Verifica superata: {v['citazioni_verificate']} citazioni, "
                                          f"{v['campi_mancanti']} campi mancanti")
                         passi.append(f"📄 File creato: {dati['filename']}")
-                    elif tipo == "tokens":
-                        st.session_state.tokens += dati
+                    elif tipo == "tokens":  # token e costo, col prezzo del modello scelto, in tempo reale
+                        entrata, uscita = dati
+                        prezzo_in, prezzo_out = PREZZI.get(modello, (0, 0))
+                        token_richiesta += entrata + uscita
+                        costo_richiesta += (entrata * prezzo_in + uscita * prezzo_out) / 1_000_000
+                        aggiorna_testata(inizio, token_richiesta, costo_richiesta)
                     elif tipo == "done":
                         testo = dati
                 pannello.update(label="Fatto", state="complete", expanded=False)
             except Exception as errore:
                 testo = f"⚠️ Errore nella chiamata al modello: {errore}"
                 pannello.update(label="Errore", state="error")
+
+    # Misure della richiesta: si sommano ai totali della sessione
+    durata = time.time() - inizio
+    st.session_state.ultima = {"secondi": durata, "token": token_richiesta, "costo": costo_richiesta, "modello": modello}
+    st.session_state.secondi += durata
+    st.session_state.tokens += token_richiesta
+    st.session_state.costo += costo_richiesta
+    allegati.insert(0, {"tipo": "misure", **st.session_state.ultima})
 
     # Lasciamo traccia dei file nella conversazione, così il modello sa cosa ha già creato
     if nomi_file:

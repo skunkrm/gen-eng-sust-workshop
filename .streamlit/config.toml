@@ -1,0 +1,25 @@
+# Tema di base scuro: l'aspetto completo (vetro, animazioni, tema chiaro) lo aggiunge ui.py.
+
+[client]
+toolbarMode = "minimal"
+
+[theme]
+base = "dark"
+primaryColor = "#7DCB8A"
+backgroundColor = "#0B1317"
+secondaryBackgroundColor = "#16232A"
+textColor = "#E6EEEA"
+linkColor = "#9CE0A8"
+borderColor = "#24343C"
+baseRadius = "0.6rem"
+baseFontSize = 17
+showWidgetBorder = true
+font = "Schibsted Grotesk:https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap, Segoe UI, sans-serif"
+headingFont = "Schibsted Grotesk:https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap, Segoe UI, sans-serif"
+codeFont = "JetBrains Mono:https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap, Consolas, monospace"
+
+[theme.sidebar]
+backgroundColor = "#0A1215"
+secondaryBackgroundColor = "#16232A"
+textColor = "#D5DFDA"
+borderColor = "#22313A"
