@@ -1,14 +1,23 @@
-"""Interfaccia "Ardesia" del Sustainability Copilot: tutto l'aspetto grafico sta qui, la logica resta in app.py.
+"""Interfaccia del Sustainability Copilot: tutto l'aspetto grafico sta qui, la logica resta in app.py.
 
-- sfondo vivo: un campo di flusso di particelle (dati grezzi in ambra che diventano verde lichene),
-  che accelera quando l'agente lavora;
-- pannelli in vetro smerigliato con luce che segue il mouse;
-- intestazione con titolo animato, frase che si scrive da sola, contatori di token e costo
-  con la barra del budget mensile;
-- bordo luminoso che gira attorno al pannello dell'agente mentre lavora;
-- tema scuro e chiaro con il pulsante nell'intestazione (la scelta resta salvata nel browser).
+Tre stili, scelti con la variabile ESG_STILE nel file .env (predefinito "carta"):
+- carta: sfondo bianco, pochi elementi, massima leggibilita'; nell'intestazione una linea delle emissioni
+  che scorre e diventa ambra quando l'agente lavora;
+- aurora: come carta, con una luce pastello animata nell'intestazione;
+- ardesia: scuro e animato, con un campo di particelle che accelera quando l'agente lavora.
 
-Niente librerie esterne: CSS e JavaScript puro, inseriti con st.html.
+In tutti gli stili:
+- intestazione con il nome dell'agente e una frase che si scrive da sola (FRASI, diverse per ogni step);
+- pannello "Tempi e costi" a destra, richiudibile in una pillola: cronometro della richiesta e della sessione,
+  costo calcolato con i prezzi del modello scelto (PREZZI in config.py), token di input e output,
+  barra del budget mensile di 4 $;
+- sotto ogni risposta le misure: tempo, token, costo e modello;
+- bordo luminoso attorno al pannello dell'agente mentre lavora;
+- pulsanti per il tema chiaro o scuro (predefinito chiaro, la scelta resta salvata nel browser)
+  e per il tutto schermo.
+
+Niente librerie esterne: CSS e JavaScript puro, inseriti con st.html. Il tema di base di Streamlit
+(colori, carattere, barra laterale) sta in .streamlit/config.toml.
 """
 
 import html
