@@ -240,6 +240,8 @@ def _e_campo(nodo):
 
 
 def _testo_valore(v):
+    if isinstance(v, bool):  # prima dei numeri: in Python True è anche un intero
+        return "sì" if v else "no"
     if v is None or v == "":
         return "-"
     if isinstance(v, float):
