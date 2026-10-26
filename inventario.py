@@ -181,7 +181,7 @@ def calcola(files, stima_mancanti=False):
         "totale_t_CO2e": round(totale, 1),
         "totale_kg_CO2e": round(totale * 1000, 1),
         "numero_voci": len(righe_energia) + len(righe_flotta) + len(righe_refr) + len(righe_viaggi),
-        "fattori_usati": {k: f"{v} ({fonte})" for k, (v, fonte) in fattori.items()},
+        "fattori_usati": {k: f"{v:g} ({fonte})".replace(".", ",", 1) for k, (v, fonte) in fattori.items()},  # 0,213 all'italiana
         "nota": "Scope 3 limitato alla categoria 6 (trasferte): è l'unica presente nei dati.",
         "_dettaglio": {"energia": righe_energia, "flotta": righe_flotta, "refrigeranti": righe_refr, "viaggi": righe_viaggi},
     }
