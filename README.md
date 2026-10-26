@@ -126,6 +126,8 @@ Nello step 3, dopo aver caricato i quattro file, cliccate **📦 Prompt Digital 
 
 **Il codice controlla l'AI.** Prima di creare il JSON, lo strumento verifica che ogni citazione dei campi "documentato" compaia davvero nei documenti caricati, e che i campi "mancante" non abbiano un valore. Se la verifica non passa, il file non viene creato e il modello deve correggersi: nel pannello dell'agente vedete quali campi non tornano.
 
+**Anche l'inventario lo calcola il codice.** Nello step 3 lo strumento `calcola_inventario` legge direttamente l'Excel dei consumi, segnala e corregge le anomalie, e restituisce i totali; `crea_report_inventario` genera l'Excel con le formule e il confronto con il bilancio. Il modello non ricopia valori e non fa somme a mente: commenta i risultati.
+
 Il DPP è **dimostrativo**: i requisiti di dettaglio per i prodotti in acciaio dipenderanno dall'atto delegato previsto dal Regolamento ESPR (UE) 2024/1781.
 
 ### Foto dal vivo
