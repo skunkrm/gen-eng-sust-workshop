@@ -13,8 +13,9 @@ st.set_page_config(page_title=NOME, page_icon="🌱", layout="wide", initial_sid
 stile()
 intestazione = st.empty()  # la riempiamo dopo la sidebar, quando sappiamo modello e documenti
 
-# tokens, costo e secondi: totali della sessione; ultima: misure dell'ultima richiesta
-DEFAULT = {"messages": [], "tokens": 0, "costo": 0.0, "secondi": 0.0, "ultima": {}, "kb_text": "", "kb_names": [], "allegati": {},
+# tokens (di cui tok_in di input e tok_out di output), costo e secondi: totali della sessione;
+# ultima: misure dell'ultima richiesta
+DEFAULT = {"messages": [], "tokens": 0, "tok_in": 0, "tok_out": 0, "costo": 0.0, "secondi": 0.0, "ultima": {}, "kb_text": "", "kb_names": [], "allegati": {},
            "foto_inviate": set(), "stato": {}}
 for chiave, valore in DEFAULT.items():
     if chiave not in st.session_state:
@@ -50,11 +51,13 @@ with st.sidebar:
         st.rerun()
 
 
-def aggiorna_testata(inizio=None, token_richiesta=0, costo_richiesta=0.0):
-    """inizio: istante di partenza della richiesta in corso (None se l'agente è fermo)."""
+def aggiorna_testata(inizio=None, entrata=0, uscita=0, costo_richiesta=0.0):
+    """inizio: istante di partenza della richiesta in corso (None se l'agente è fermo);
+    entrata, uscita, costo_richiesta: token e costo della richiesta in corso, da sommare ai totali."""
     s = st.session_state
     testata(intestazione, modello, len(s.kb_names), s.tokens, s.costo, s.secondi, s.ultima,
-            inizio=inizio, token_richiesta=token_richiesta, costo_richiesta=costo_richiesta)
+            inizio=inizio, token_richiesta=entrata + uscita, costo_richiesta=costo_richiesta,
+            tok_in=s.tok_in + entrata, tok_out=s.tok_out + uscita)
 
 
 aggiorna_testata()
@@ -109,7 +112,7 @@ if domanda:
     indice_risposta = indice_utente + 1
     allegati, nomi_file, testo, passi = [], [], "", []
     inizio = time.time()
-    token_richiesta, costo_richiesta = 0, 0.0
+    entrata_tot, uscita_tot, costo_richiesta = 0, 0, 0.0  # token e costo di questa richiesta
     aggiorna_testata(inizio)
     with st.chat_message("assistant", avatar=AVATAR_AGENTE):
         with st.status("L'agente sta lavorando…", expanded=True) as pannello:
@@ -150,9 +153,10 @@ if domanda:
                     elif tipo == "tokens":  # token e costo, col prezzo del modello scelto, in tempo reale
                         entrata, uscita = dati
                         prezzo_in, prezzo_out = PREZZI.get(modello, (0, 0))
-                        token_richiesta += entrata + uscita
+                        entrata_tot += entrata
+                        uscita_tot += uscita
                         costo_richiesta += (entrata * prezzo_in + uscita * prezzo_out) / 1_000_000
-                        aggiorna_testata(inizio, token_richiesta, costo_richiesta)
+                        aggiorna_testata(inizio, entrata_tot, uscita_tot, costo_richiesta)
                     elif tipo == "done":
                         testo = dati
                 pannello.update(label="Fatto", state="complete", expanded=False)
@@ -162,9 +166,12 @@ if domanda:
 
     # Misure della richiesta: si sommano ai totali della sessione
     durata = time.time() - inizio
-    st.session_state.ultima = {"secondi": durata, "token": token_richiesta, "costo": costo_richiesta, "modello": modello}
+    st.session_state.ultima = {"secondi": durata, "token": entrata_tot + uscita_tot, "costo": costo_richiesta,
+                               "modello": modello}
     st.session_state.secondi += durata
-    st.session_state.tokens += token_richiesta
+    st.session_state.tokens += entrata_tot + uscita_tot
+    st.session_state.tok_in += entrata_tot
+    st.session_state.tok_out += uscita_tot
     st.session_state.costo += costo_richiesta
     allegati.insert(0, {"tipo": "misure", **st.session_state.ultima})
 

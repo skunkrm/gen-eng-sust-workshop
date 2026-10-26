@@ -415,8 +415,7 @@ JS = r"""
       try { inizio = parseFloat(sessionStorage.getItem(chiave) || '0') || 0; sessionStorage.setItem(chiave, String(fine)); } catch (e) {}
       const scrivi = v => {
         if (formato === 'int') el.textContent = Math.round(v).toLocaleString('it-IT');
-        else el.textContent = v < .01 ? (v * 100).toFixed(2).replace('.', ',') + ' ¢' : v.toFixed(2).replace('.', ',') + ' $';
-        if (formato !== 'int' && v === 0) el.textContent = '0 ¢';
+        else el.textContent = v.toFixed(v < 1 ? 4 : 2).replace('.', ',') + ' $';  // sempre in dollari, come in Python
       };
       if (lento || inizio === fine) { scrivi(fine); return; }
       const t0 = performance.now();
@@ -459,11 +458,8 @@ def _intero(n):
 
 
 def _costo(dollari):
-    if dollari == 0:
-        return "0 ¢"
-    if dollari < 0.01:
-        return f"{dollari * 100:.2f} ¢".replace(".", ",")
-    return f"{dollari:.2f} $".replace(".", ",")
+    """Sempre in dollari, come il catalogo dei prezzi: 4 decimali sotto il dollaro (0,0312 $), poi 2."""
+    return f"{dollari:.{4 if dollari < 1 else 2}f} $".replace(".", ",")
 
 
 def _durata(secondi):
@@ -473,7 +469,7 @@ def _durata(secondi):
 
 
 def testata(contenitore, modello, documenti, token, dollari, secondi, ultima,
-            inizio=None, token_richiesta=0, costo_richiesta=0.0):
+            inizio=None, token_richiesta=0, costo_richiesta=0.0, tok_in=0, tok_out=0):
     """Intestazione con i contatori. token, dollari e secondi sono i totali della sessione;
     durante una richiesta (inizio valorizzato) si aggiungono i valori parziali, e il tempo scorre nel browser."""
     lavoro = inizio is not None
@@ -486,14 +482,16 @@ def testata(contenitore, modello, documenti, token, dollari, secondi, ultima,
     if lavoro:  # tempo della richiesta in corso: lo fa scorrere il JavaScript
         tempo = f'<b data-inizio="{inizio * 1000:.0f}" data-base="0">0,0 s</b>'
         tempo_nota = f'<span data-inizio="{inizio * 1000:.0f}" data-base="{secondi}" data-prefisso="Totale">Totale {_durata(secondi)}</span>'
-        nota_token, nota_costo = f"Questa richiesta {_intero(token_richiesta)}", f"Questa richiesta {_costo(costo_richiesta)}"
+        nota_costo = f"Questa richiesta {_costo(costo_richiesta)}"
     elif ultima:
         tempo = f"<b>{_durata(ultima['secondi'])}</b>"
         tempo_nota = f"<span>Totale {_durata(secondi)}</span>"
-        nota_token, nota_costo = f"Ultima richiesta {_intero(ultima['token'])}", f"Ultima richiesta {_costo(ultima['costo'])}"
+        nota_costo = f"Ultima richiesta {_costo(ultima['costo'])}"
     else:
         tempo, tempo_nota = "<b>–</b>", "<span>Nessuna richiesta</span>"
-        nota_token = nota_costo = "Nessuna richiesta"
+        nota_costo = "Nessuna richiesta"
+    # token divisi in input e output: il costo si ricalcola a mano con i prezzi del modello
+    nota_token = f"input {_intero(tok_in)}, output {_intero(tok_out)}"
 
     if lavoro:
         pillola_tempo = f'<b data-inizio="{inizio * 1000:.0f}" data-base="0">0,0 s</b>'
