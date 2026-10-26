@@ -24,12 +24,13 @@ def build_messages(message, history, knowledge_base=""):
 
 
 def reply(message, history, knowledge_base="", model=MODEL):
-    """Restituisce (testo della risposta, token usati)."""
+    """Restituisce (testo della risposta, (token di input, token di output))."""
     risposta = client.chat.completions.create(
         model=model,
         messages=build_messages(message, history, knowledge_base),
         max_tokens=MAX_TOKENS,
     )
     testo = risposta.choices[0].message.content or ""
-    token = risposta.usage.total_tokens if risposta.usage else 0
+    uso = risposta.usage
+    token = (uso.prompt_tokens, uso.completion_tokens) if uso else (0, 0)  # input e output: costano diversamente
     return testo, token

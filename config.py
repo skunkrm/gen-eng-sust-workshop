@@ -23,6 +23,13 @@ MODELS = {
 }
 MODEL = "amazon.nova-lite-v1:0"
 
+# Prezzi in dollari per milione di token (input, output): servono per mostrare il costo della sessione
+PREZZI = {
+    "anthropic.claude-haiku-5-5": (0.11, 0.55),
+    "anthropic.claude-sonnet-5-5": (2.20, 11.0),
+    "amazon.nova-lite-v1:0": (0.0824, 0.3193),
+}
+
 MAX_TOKENS = 4096
 
 # Il system prompt: il nostro mestiere, scritto in italiano
