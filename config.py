@@ -17,11 +17,13 @@ client = OpenAI(
 )
 
 # Modelli disponibili: l'agente ha bisogno di un modello che supporti i tool
+# Prezzi indicativi del Models catalog (dollari per milione di token, input / output)
 MODELS = {
-    "anthropic.claude-sonnet-4-6": "Preciso, supporta tool e immagini",
-    "amazon.nova-lite-v1:0": "Economico, senza tool",
+    "anthropic.claude-haiku-5-5": "Veloce ed economico (0,11 / 0,55 $), supporta tool e immagini",
+    "anthropic.claude-sonnet-5-5": "Più preciso e più costoso (2,20 / 11 $), supporta tool e immagini",
+    "amazon.nova-lite-v1:0": "Economico (0,08 / 0,32 $), senza tool",
 }
-MODEL = "anthropic.claude-sonnet-4-6"
+MODEL = "anthropic.claude-haiku-5-5"
 
 MAX_TOKENS = 16000
 
