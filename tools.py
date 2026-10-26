@@ -8,6 +8,7 @@ Ogni strumento ha due parti:
 import json
 import re
 
+import inventario
 from generator import make_chart, make_document
 
 # Fattori di emissione: stessi valori del foglio "Fattori_emissione" del file di test.
@@ -35,10 +36,54 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "calcola_inventario",
+            "description": (
+                "Calcola l'inventario GHG leggendo direttamente il file Excel dei consumi caricato dall'utente "
+                "(fogli Consumi_energia, Flotta, Refrigeranti, Viaggi_lavoro). Il codice controlla la qualità dei dati, "
+                "corregge le unità anomale dichiarandolo, applica i fattori del foglio Fattori_emissione e restituisce "
+                "i totali per categoria, scope e sito. Usalo SEMPRE per i dati di consumo: non ricopiare i valori."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "stima_mancanti": {
+                        "type": "boolean",
+                        "description": "true per stimare i mesi mancanti con la media del sito; false (predefinito) per escluderli e segnalarli",
+                    }
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "crea_report_inventario",
+            "description": (
+                "Crea il report Excel dell'ultimo inventario calcolato con calcola_inventario: riepilogo con formule, "
+                "dettaglio per riga, controlli di qualità e fattori. Usalo per l'Excel dell'inventario al posto di crea_documento. "
+                "Se nei documenti c'è un bilancio, passa i valori dichiarati per avere il foglio di confronto."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "nome_file": {"type": "string", "description": "Nome senza estensione"},
+                    "valori_dichiarati": {
+                        "type": "object",
+                        "description": "Valori dichiarati nel bilancio, es. {\"Scope 1\": 1106, \"Scope 2\": 2657}",
+                        "additionalProperties": {"type": "number"},
+                    },
+                },
+                "required": ["nome_file"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "calcola_emissioni",
             "description": (
-                "Calcola le emissioni di gas serra moltiplicando ogni quantità per il suo fattore di emissione. "
-                "Usalo SEMPRE per calcolare le emissioni, anche per una sola voce. "
+                "Calcola le emissioni di poche voci singole (per esempio i componenti di un prodotto). "
+                "Per l'Excel dei consumi aziendali usa invece calcola_inventario. "
                 "Passa le voci singole come sono nei dati (una per sito e mese, per veicolo, per viaggio), "
                 "senza sommarle: le somme le fa lo strumento. "
                 "Per i viaggi passa la distanza di sola andata e indica andata_ritorno e persone: "
@@ -213,6 +258,20 @@ def execute_tool(name, args, stato):
     stato è un dizionario che dura per tutta la sessione (qui teniamo l'ultimo grafico).
     """
     try:
+        if name == "calcola_inventario":
+            inv = inventario.calcola(stato.get("file_excel", []), bool(args.get("stima_mancanti", False)))
+            stato["inventario"] = inv
+            risultato = inventario.pubblico(inv)
+            return json.dumps(risultato, ensure_ascii=False), ("calc", risultato)
+
+        if name == "crea_report_inventario":
+            if "inventario" not in stato:
+                return "Prima calcola l'inventario con calcola_inventario.", None
+            dati = inventario.report_excel(stato["inventario"], args.get("valori_dichiarati"))
+            nome = re.sub(r"[^\w\-]+", "_", args.get("nome_file") or "inventario_ghg").strip("_") + ".xlsx"
+            mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            return f"File {nome} creato e disponibile per il download.", ("file", {"data": dati, "filename": nome, "mime": mime})
+
         if name == "calcola_emissioni":
             risultato = calcola_emissioni(args["voci"])
             evento = ("calc", risultato)

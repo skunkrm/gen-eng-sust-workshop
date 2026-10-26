@@ -77,6 +77,10 @@ if domanda:
         st.markdown(domanda)
         mostra_allegati(indice_utente)
 
+    # Gli Excel caricati servono così come sono allo strumento calcola_inventario
+    st.session_state.stato["file_excel"] = [(f.name, f.getvalue()) for f in documenti
+                                            if f.name.lower().endswith(".xlsx")]
+
     indice_risposta = indice_utente + 1
     allegati, nomi_file, testo = [], [], ""
     with st.chat_message("assistant"):
