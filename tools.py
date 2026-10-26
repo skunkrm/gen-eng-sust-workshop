@@ -9,7 +9,7 @@ import json
 import re
 
 import inventario
-from generator import make_chart, make_document, make_dpp_pdf
+from generator import make_chart, make_document, make_dpp_pdf, make_verbale_hse
 
 # Fattori di emissione: stessi valori del foglio "Fattori_emissione" del file di test.
 # Valori indicativi a scopo formativo: per un uso reale verificare l'ultima edizione delle fonti.
@@ -173,6 +173,57 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "crea_verbale_hse",
+            "description": (
+                "Crea il verbale di sopralluogo HSE in PDF, con impaginazione fissa: dati del sopralluogo, foto, "
+                "tabella delle non conformità con priorità, tabella delle azioni correttive, limiti e firme. "
+                "Usalo per ogni verbale o ispezione HSE, anche da foto (le foto inviate entrano da sole). "
+                "Scrivi solo ciò che si vede o è nei documenti; i campi non noti lasciali vuoti."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "nome_file": {"type": "string", "description": "Nome senza estensione, es. 'verbale_hse_postazione'"},
+                    "titolo": {"type": "string", "description": "Es. 'Verbale di sopralluogo HSE - Postazione di lavoro'"},
+                    "luogo": {"type": "string"},
+                    "data": {"type": "string"},
+                    "ispettore": {"type": "string"},
+                    "oggetto": {"type": "string", "description": "Una frase: cosa è stato ispezionato"},
+                    "non_conformita": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "osservazione": {"type": "string", "description": "Cosa si vede, breve"},
+                                "rischio": {"type": "string"},
+                                "riferimento": {"type": "string", "description": "Riferimento normativo generico, es. D.Lgs. 81/2008, All. IV"},
+                                "priorita": {"type": "string", "enum": ["alta", "media", "bassa"]},
+                            },
+                            "required": ["osservazione", "rischio", "priorita"],
+                        },
+                    },
+                    "azioni": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "azione": {"type": "string"},
+                                "rif_non_conformita": {"type": "string", "description": "Numeri delle non conformità, es. '1, 2'"},
+                                "priorita": {"type": "string", "enum": ["alta", "media", "bassa"]},
+                            },
+                            "required": ["azione", "priorita"],
+                        },
+                    },
+                    "limiti": {"type": "array", "items": {"type": "string"},
+                               "description": "Cosa non si può verificare (da una foto, senza sopralluogo...)"},
+                },
+                "required": ["nome_file", "titolo", "oggetto", "non_conformita", "azioni"],
+            },
+        },
+    },
 ]
 
 
@@ -290,6 +341,13 @@ def execute_tool(name, args, stato):
                              args.get("serie_confronto"), args.get("nomi_serie"))
             stato["ultimo_grafico"] = png
             return "Grafico creato e mostrato all'utente.", ("chart", {"png": png, "titolo": args["titolo"]})
+
+        if name == "crea_verbale_hse":
+            dati = make_verbale_hse(args, stato.get("foto") or [])
+            nome = re.sub(r"[^\w\-]+", "_", args.get("nome_file") or "verbale_hse").strip("_") + ".pdf"
+            n = len(args.get("non_conformita", []))
+            return (f"File {nome} creato: {n} non conformità, {len(args.get('azioni', []))} azioni"
+                    f"{', foto inclusa' if stato.get('foto') else ''}."), ("file", {"data": dati, "filename": nome, "mime": "application/pdf"})
 
         if name == "crea_documento":
             if args.get("da_json_verificato") and args["formato"] == "pdf":

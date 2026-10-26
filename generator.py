@@ -299,6 +299,8 @@ def _pdf(titolo, contenuto, grafico, foto=None):
     pdf.add_page()
     for tipo, valore in _blocchi(contenuto):
         testo = _latin1(_pulisci(valore)) if tipo != "tabella" else None
+        if tipo in ("h1", "h2", "h3") and "_" in testo and " " not in testo:
+            testo = testo.replace("_", " ").capitalize()  # es. dati_mancanti -> Dati mancanti
         if tipo == "h1" and testo.strip().lower() == pdf.titolo.strip().lower():
             continue  # il titolo è già nella fascia
         if tipo == "tabella":
@@ -369,6 +371,166 @@ def _pdf(titolo, contenuto, grafico, foto=None):
         pdf.cell(0, 6, f"Foto {i}: fornita dall'utente, non verificata sul posto", align="C",
                  new_x="LMARGIN", new_y="NEXT")
         pdf.ln(2)
+    return bytes(pdf.output())
+
+
+PRIORITA = {"alta": ((185, 50, 40), (251, 235, 235)), "media": ((176, 112, 10), (252, 243, 225)),
+            "bassa": ((60, 120, 70), (229, 244, 228))}
+
+
+def _box(pdf, x, y, w, h, colore):
+    pdf.set_fill_color(*colore)
+    pdf.rect(x, y, w, h, "F", round_corners=True, corner_radius=2)
+
+
+def _titolo_sezione(pdf, testo):
+    pdf.ln(3)
+    if pdf.get_y() > pdf.h - 50:
+        pdf.add_page()
+    y = pdf.get_y()
+    pdf.set_fill_color(*LICHENE)
+    pdf.rect(18, y + 1, 2.2, 5.6, "F")
+    pdf.set_xy(23, y)
+    pdf.set_text_color(*ARDESIA)
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.cell(0, 7.5, _latin1(testo), new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(1.5)
+
+
+def _tabella(pdf, intestazione, righe, larghezze, colonna_priorita=None):
+    pdf.set_font("Helvetica", size=8.8)
+    pdf.set_text_color(*TESTO)
+    pdf.set_draw_color(*FILO)
+    pdf.set_line_width(0.2)
+    pdf.set_fill_color(*RIGA_ALTERNA)
+    stile = FontFace(emphasis="BOLD", color=255, fill_color=ARDESIA)
+    with pdf.table(first_row_as_headings=True, headings_style=stile, line_height=5.4, text_align="LEFT",
+                   col_widths=larghezze, cell_fill_color=RIGA_ALTERNA, cell_fill_mode="ROWS",
+                   borders_layout="HORIZONTAL_LINES", padding=1.6) as t:
+        r = t.row()
+        for h in intestazione:
+            r.cell(_latin1(h))
+        for riga in righe:
+            r = t.row()
+            for i, valore in enumerate(riga):
+                if i == colonna_priorita:
+                    colore, sfondo = PRIORITA.get(str(valore).lower(), (TESTO, RIGA_ALTERNA))
+                    r.cell(_latin1(str(valore).upper()), align="C",
+                           style=FontFace(emphasis="BOLD", color=colore, fill_color=sfondo))
+                else:
+                    r.cell(_latin1(str(valore or "-")))
+    pdf.ln(2)
+
+
+def make_verbale_hse(d, foto=()):
+    """Verbale di sopralluogo HSE con impaginazione fissa: la grafica la decide il codice, non il modello."""
+    pdf = _Report(d.get("titolo") or "Verbale di sopralluogo HSE")
+    pdf.add_page()
+    nc, azioni = d.get("non_conformita") or [], d.get("azioni") or []
+
+    # Dati del sopralluogo: riquadro con quattro campi
+    y = pdf.get_y()
+    _box(pdf, 18, y, pdf.epw, 24, RIGA_ALTERNA)
+    campi = [("Luogo", d.get("luogo")), ("Data", d.get("data")), ("Ispettore", d.get("ispettore")),
+             ("Fonte", "foto inviata dall'utente" if foto else "documenti caricati")]
+    for i, (etichetta, valore) in enumerate(campi):
+        x, yy = 23 + (i % 2) * (pdf.epw / 2), y + 4 + (i // 2) * 9.5
+        pdf.set_xy(x, yy)
+        pdf.set_font("Helvetica", size=7.5)
+        pdf.set_text_color(*GRIGIO)
+        pdf.cell(0, 3.5, etichetta)
+        pdf.set_xy(x, yy + 3.6)
+        if valore:
+            pdf.set_font("Helvetica", "B", 10)
+            pdf.set_text_color(*TESTO)
+            pdf.cell(pdf.epw / 2 - 10, 5, _latin1(valore))
+        else:
+            pdf.set_draw_color(*FILO)
+            pdf.line(x, yy + 8, x + pdf.epw / 2 - 16, yy + 8)
+    pdf.set_y(y + 28)
+
+    # Oggetto e sintesi, con la foto accanto
+    _titolo_sezione(pdf, "Oggetto e sintesi")
+    y0 = pdf.get_y()
+    larghezza_testo = pdf.epw
+    if foto:
+        dati, proporzione = foto_pronta(foto[0])
+        lf = 72
+        hf = min(lf / proporzione, 80)
+        lf = hf * proporzione
+        pdf.image(BytesIO(dati), x=pdf.w - 18 - lf, y=y0, w=lf, h=hf)
+        pdf.set_xy(pdf.w - 18 - lf, y0 + hf + 0.5)
+        pdf.set_font("Helvetica", "I", 7.5)
+        pdf.set_text_color(*GRIGIO)
+        pdf.cell(lf, 4, "Foto 1: fornita dall'utente, non verificata sul posto", align="C")
+        larghezza_testo = pdf.epw - lf - 6
+        fondo_foto = y0 + hf + 5
+    else:
+        fondo_foto = y0
+    pdf.set_xy(18, y0)
+    pdf.set_font("Helvetica", size=10)
+    pdf.set_text_color(*TESTO)
+    pdf.multi_cell(larghezza_testo, 5.6, _latin1(d.get("oggetto", "")), new_x="LMARGIN", new_y="NEXT", align="L")
+    pdf.ln(3)
+    conteggio = {p: sum(1 for n in nc if str(n.get("priorita", "")).lower() == p) for p in PRIORITA}
+    pdf.set_font("Helvetica", "B", 22)
+    pdf.set_text_color(*ARDESIA)
+    pdf.cell(14, 10, str(len(nc)))
+    pdf.set_font("Helvetica", size=10)
+    pdf.cell(larghezza_testo - 14, 10, "possibili non conformità", new_x="LMARGIN", new_y="NEXT")
+    for p, (colore, sfondo) in PRIORITA.items():
+        if conteggio[p]:
+            x, y = pdf.get_x(), pdf.get_y() + 1
+            _box(pdf, x, y, 30, 7, sfondo)
+            pdf.set_xy(x, y)
+            pdf.set_font("Helvetica", "B", 8.5)
+            pdf.set_text_color(*colore)
+            pdf.cell(30, 7, _latin1(f"{conteggio[p]} priorità {p}"), align="C")
+            pdf.set_xy(x + 33, y - 1)
+    pdf.set_y(max(pdf.get_y() + 12, fondo_foto))
+
+    _titolo_sezione(pdf, "Non conformità")
+    _tabella(pdf, ["#", "Osservazione", "Rischio", "Riferimento", "Priorità"],
+             [[i, n.get("osservazione"), n.get("rischio"), n.get("riferimento"), n.get("priorita")]
+              for i, n in enumerate(nc, 1)], (6, 36, 26, 22, 12), colonna_priorita=4)
+
+    _titolo_sezione(pdf, "Azioni correttive")
+    _tabella(pdf, ["#", "Azione", "Rif. NC", "Priorità"],
+             [[i, a.get("azione"), a.get("rif_non_conformita"), a.get("priorita")] for i, a in enumerate(azioni, 1)],
+             (6, 64, 12, 12), colonna_priorita=3)
+
+    limiti = d.get("limiti") or []
+    if limiti:
+        _titolo_sezione(pdf, "Limiti della valutazione")
+        pdf.set_font("Helvetica", size=9.5)
+        testo = _latin1("\n".join(limiti))
+        righe = len(pdf.multi_cell(pdf.epw - 12, 5.2, testo, dry_run=True, output="LINES"))
+        y = pdf.get_y()
+        _box(pdf, 18, y, pdf.epw, righe * 5.2 + 6, (252, 243, 225))
+        pdf.set_fill_color(*AMBRA)
+        pdf.rect(18, y, 1.8, righe * 5.2 + 6, "F")
+        pdf.set_xy(24, y + 3)
+        pdf.set_text_color(*TESTO)
+        pdf.multi_cell(pdf.epw - 12, 5.2, testo, new_x="LMARGIN", new_y="NEXT", align="L")
+        pdf.set_y(y + righe * 5.2 + 9)
+
+    # Firme
+    if pdf.get_y() > pdf.h - 50:
+        pdf.add_page()
+    _titolo_sezione(pdf, "Firme")
+    y = pdf.get_y()
+    for i, etichetta in enumerate(["Ispettore", "Presa visione (RSPP o responsabile)"]):
+        x = 18 + i * (pdf.epw / 2 + 3)
+        w = pdf.epw / 2 - 3
+        pdf.set_draw_color(*FILO)
+        pdf.rect(x, y, w, 24, "D", round_corners=True, corner_radius=2)
+        pdf.set_xy(x + 4, y + 3)
+        pdf.set_font("Helvetica", size=8)
+        pdf.set_text_color(*GRIGIO)
+        pdf.cell(w - 8, 4, _latin1(etichetta))
+        pdf.line(x + 4, y + 18, x + w - 4, y + 18)
+        pdf.set_xy(x + 4, y + 18.5)
+        pdf.cell(w - 8, 4, "Firma e data")
     return bytes(pdf.output())
 
 
