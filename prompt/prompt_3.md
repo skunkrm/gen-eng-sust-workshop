@@ -8,8 +8,9 @@ Ecco i file attuali:
 Nuova struttura: config.py, extractor.py (invariato), tools.py (nuovo), generator.py (nuovo), engine.py, app.py
 
 config.py:
-- MODELS: "anthropic.claude-sonnet-4-6" ("Preciso, supporta tool e immagini") e
-  "amazon.nova-lite-v1:0" ("Economico, senza tool"); MODEL = "anthropic.claude-sonnet-4-6"
+- MODELS: "anthropic.claude-haiku-5-5" (veloce ed economico, supporta tool e immagini),
+  "anthropic.claude-sonnet-5-5" (più preciso e costoso) e "amazon.nova-lite-v1:0" (senza tool);
+  MODEL = "anthropic.claude-haiku-5-5"
 - MAX_TOKENS = 8192, MAX_ITERATIONS = 8
 - aggiungi al system prompt queste regole:
   "1. prima di qualsiasi calcolo controlla la qualità dei dati, segnala cosa trovi e dichiara le correzioni;
