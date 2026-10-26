@@ -16,7 +16,7 @@ import json
 
 from openai import BadRequestError, PermissionDeniedError
 
-from config import MAX_ITERATIONS, MAX_TOKENS, MODEL, SYSTEM_PROMPT, client
+from config import MAX_ITERATIONS, MAX_TOKENS, MODEL, max_tokens, SYSTEM_PROMPT, client
 from tools import TOOLS, execute_tool
 
 
@@ -59,7 +59,7 @@ def reply(message, history, knowledge_base="", model=MODEL, images=None, stato=N
         for giro in range(1, MAX_ITERATIONS + 1):
             yield ("step", f"Giro {giro}: il modello sta ragionando…")
             risposta = client.chat.completions.create(
-                model=model, messages=messages, tools=TOOLS, max_tokens=MAX_TOKENS,
+                model=model, messages=messages, tools=TOOLS, max_tokens=max_tokens(model),
             )
             if risposta.usage:
                 yield ("tokens", (risposta.usage.prompt_tokens, risposta.usage.completion_tokens))
@@ -119,7 +119,7 @@ def reply(message, history, knowledge_base="", model=MODEL, images=None, stato=N
         yield ("step", f"⚠️ Il modello ha rifiutato la richiesta: {errore}")
         yield ("step", "Riprovo senza strumenti e senza immagini…")
         semplici = build_messages(message, history, knowledge_base)
-        risposta = client.chat.completions.create(model=model, messages=semplici, max_tokens=MAX_TOKENS)
+        risposta = client.chat.completions.create(model=model, messages=semplici, max_tokens=max_tokens(model))
         if risposta.usage:
             yield ("tokens", (risposta.usage.prompt_tokens, risposta.usage.completion_tokens))
         yield ("done", (risposta.choices[0].message.content or "")
