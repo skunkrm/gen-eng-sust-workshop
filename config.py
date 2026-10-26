@@ -26,7 +26,9 @@ PREZZI = {
     "amazon.nova-lite-v1:0": (0.0824, 0.3193),
 }
 
-MAX_TOKENS = 4096
+# Tetto ai token di risposta: i modelli più recenti "ragionano" prima di rispondere e quel ragionamento
+# consuma token, quindi con un tetto basso la risposta può arrivare vuota
+MAX_TOKENS = 16000
 
 # Il system prompt: il nostro mestiere, scritto in italiano
 SYSTEM_PROMPT = """Sei un consulente senior di sostenibilità, esperto di CSRD, ESRS e GHG Protocol.
