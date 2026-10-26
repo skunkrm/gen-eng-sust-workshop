@@ -1,0 +1,42 @@
+# Tema "Ardesia": ardesia scura, verde lichene per la sostenibilità, ambra (metallo fuso) per costi e anomalie.
+# Tema scuro e chiaro: si cambia da ⋮ → Settings. Testo a 17px, leggibile anche sul proiettore.
+
+[client]
+toolbarMode = "viewer"
+
+[theme]
+baseRadius = "0.5rem"
+baseFontSize = 17
+showWidgetBorder = true
+font = "Schibsted Grotesk:https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap, sans-serif"
+headingFont = "Schibsted Grotesk:https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap, sans-serif"
+codeFont = "JetBrains Mono:https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap, monospace"
+
+[theme.dark]
+primaryColor = "#7DBE86"
+backgroundColor = "#111A1F"
+secondaryBackgroundColor = "#1A262D"
+textColor = "#E3EAE6"
+linkColor = "#9CD3A3"
+borderColor = "#2C3B43"
+
+[theme.dark.sidebar]
+backgroundColor = "#0C1317"
+secondaryBackgroundColor = "#17232A"
+textColor = "#D5DFDA"
+borderColor = "#25333B"
+
+[theme.light]
+primaryColor = "#3F7A4A"
+backgroundColor = "#F3F6F4"
+secondaryBackgroundColor = "#E3EAE6"
+textColor = "#1C272D"
+linkColor = "#2F6A3B"
+borderColor = "#CBD5D0"
+
+[theme.light.sidebar]
+backgroundColor = "#1C2A31"
+secondaryBackgroundColor = "#273840"
+textColor = "#E3EAE6"
+primaryColor = "#8DCB95"
+borderColor = "#34474F"
