@@ -1,4 +1,4 @@
-# ESG Copilot — Workshop
+# Sustainability Copilot — Workshop
 
 Materiale per un workshop pratico della **CoE Sustainability**: come un consulente ESG, senza essere sviluppatore, costruisce con il **Generative Engine di Capgemini** un agente che analizza un bilancio di sostenibilità, calcola le emissioni e trova gli errori.
 
@@ -122,7 +122,7 @@ In `doc_test/dpp/` ci sono i documenti di un componente di Ardesia, la staffa di
 | `Certificato_CSL_CSL-25-0412.pdf` | Certificato 3.1 del centro servizi che fornisce la piastra di rinforzo |
 | `Scheda_tecnica_SP-220.pdf` | Scheda tecnica con istruzioni di smontaggio e fine vita |
 
-Nello step 3, dopo aver caricato i quattro file, cliccate **📦 Prompt Digital Product Passport** nella barra laterale: l'app invia un prompt già pronto che chiede all'agente uno schema preciso, con fonte e citazione per ogni campo.
+Nello step 3, dopo aver caricato i quattro file, scrivete: «Crea il Digital Product Passport della staffa SP-220 dai documenti caricati, in JSON e in PDF.» Lo schema dei campi, con fonte e citazione per ognuno, e le regole per la carbon footprint sono già nelle istruzioni dell'agente (`config.py`).
 
 **Il codice controlla l'AI.** Prima di creare il JSON, lo strumento verifica che ogni citazione dei campi "documentato" compaia davvero nei documenti caricati, e che i campi "mancante" non abbiano un valore. Se la verifica non passa, il file non viene creato e il modello deve correggersi: nel pannello dell'agente vedete quali campi non tornano.
 
@@ -146,7 +146,13 @@ I fattori di emissione nel file Excel sono **indicativi, a scopo formativo**: pe
 | `anthropic.claude-haiku-5-5` | Veloce ed economico (circa 30 volte meno di Sonnet), supporta tool e immagini. Predefinito nello step 3. |
 | `anthropic.claude-sonnet-5-5` | Più preciso e più costoso. Usato nel confronto dello step 2 e come riserva nello step 3. |
 
-Il modello si cambia in `config.py`. Il catalogo completo, con i prezzi per milione di token, è nel **Models catalog** dello Studio.
+Il modello si cambia in `config.py`.
+
+## L'interfaccia
+
+Dagli step 1 a 3 l'app ha la stessa veste: tema scuro e chiaro (pulsante ☀ nell'intestazione), sfondo animato e il pannello **Tempi e costi** a destra, richiudibile, con il cronometro di ogni richiesta, i token divisi in input e output e il costo calcolato con i prezzi del modello scelto. Sotto ogni risposta trovate tempo, token, costo e modello di quella richiesta.
+
+La grafica sta tutta in `ui.py` e `.streamlit/config.toml`: non viene dai prompt degli step, ma è stata costruita allo stesso modo, descrivendo all'AI cosa si voleva vedere e rifinendo una richiesta alla volta. Cambiatela come volete: il resto dell'app non ne dipende. Il catalogo completo, con i prezzi per milione di token, è nel **Models catalog** dello Studio.
 
 Il Generative Engine ha un endpoint negli Stati Uniti e uno in Europa, ciascuno con il suo budget gratuito. Con dati di clienti europei, o se il budget US è finito, usate quello EU: nel file `.env` impostate `GEN_ENGINE_BASE_URL=https://openai.generative-eu.engine.capgemini.com/v1`.
 
