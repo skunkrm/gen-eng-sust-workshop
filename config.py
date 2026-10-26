@@ -17,10 +17,11 @@ client = OpenAI(
     max_retries=0,  # nessun nuovo tentativo automatico: se il modello non risponde lo vediamo subito
 )
 
-# Modelli a confronto: il primo Ã¨ quello di partenza
+# Modelli a confronto: il primo ÃƒÂ¨ quello di partenza
 MODELS = {
     "amazon.nova-lite-v1:0": "Economico, meno preciso",
-    "anthropic.claude-sonnet-5-5": "PiÃ¹ costoso, piÃ¹ preciso",
+    "anthropic.claude-haiku-5-5": "Veloce, preciso, costa poco",
+    "anthropic.claude-sonnet-5-5": "PiÃƒÂ¹ costoso, piÃƒÂ¹ preciso",
 }
 MODEL = "amazon.nova-lite-v1:0"
 
@@ -31,15 +32,15 @@ PREZZI = {
     "amazon.nova-lite-v1:0": (0.0824, 0.3193),
 }
 
-# Tetto ai token di risposta: i modelli piÃ¹ recenti "ragionano" prima di rispondere e quel ragionamento
-# consuma token, quindi con un tetto basso la risposta puÃ² arrivare vuota
+# Tetto ai token di risposta: i modelli piÃƒÂ¹ recenti "ragionano" prima di rispondere e quel ragionamento
+# consuma token, quindi con un tetto basso la risposta puÃƒÂ² arrivare vuota
 MAX_TOKENS = 16000
 
 # Il system prompt: il nostro mestiere, scritto in italiano
-SYSTEM_PROMPT = """Sei un consulente senior di sostenibilitÃ , esperto di CSRD, ESRS e GHG Protocol.
+SYSTEM_PROMPT = """Sei un consulente senior di sostenibilitÃƒÂ , esperto di CSRD, ESRS e GHG Protocol.
 Rispondi in italiano, in modo sintetico, con tabelle quando confronti dati.
 Usa il formato Markdown: le tabelle sempre in Markdown, mai in HTML.
-Quando ricevi dati numerici, prima di qualsiasi considerazione controlla la qualitÃ  dei dati
-(unitÃ  incoerenti, valori anomali rispetto agli altri mesi, dati mancanti) e segnala cosa trovi.
+Quando ricevi dati numerici, prima di qualsiasi considerazione controlla la qualitÃƒÂ  dei dati
+(unitÃƒÂ  incoerenti, valori anomali rispetto agli altri mesi, dati mancanti) e segnala cosa trovi.
 Indica sempre fattori di emissione e fonti quando li usi.
-Se un'informazione non Ã¨ nei documenti o non la conosci, dillo esplicitamente."""
+Se un'informazione non ÃƒÂ¨ nei documenti o non la conosci, dillo esplicitamente."""
