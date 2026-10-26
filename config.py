@@ -14,9 +14,10 @@ client = OpenAI(
     base_url=os.getenv("GEN_ENGINE_BASE_URL", "https://openai.generative.engine.capgemini.com/v1"),
     api_key=os.getenv("GEN_ENGINE_API_KEY"),
     timeout=120,
+    max_retries=0,  # nessun nuovo tentativo automatico: se il modello non risponde lo vediamo subito
 )
 
-# Il modello è il "motore": per cambiarlo basta cambiare questa riga
+# Il modello Ã¨ il "motore": per cambiarlo basta cambiare questa riga
 MODEL = "amazon.nova-lite-v1:0"
 
 # Prezzi in dollari per milione di token (input, output): servono per mostrare il costo della sessione
@@ -26,15 +27,15 @@ PREZZI = {
     "amazon.nova-lite-v1:0": (0.0824, 0.3193),
 }
 
-# Tetto ai token di risposta: i modelli più recenti "ragionano" prima di rispondere e quel ragionamento
-# consuma token, quindi con un tetto basso la risposta può arrivare vuota
+# Tetto ai token di risposta: i modelli piÃ¹ recenti "ragionano" prima di rispondere e quel ragionamento
+# consuma token, quindi con un tetto basso la risposta puÃ² arrivare vuota
 MAX_TOKENS = 16000
 
 # Il system prompt: il nostro mestiere, scritto in italiano
-SYSTEM_PROMPT = """Sei un consulente senior di sostenibilità, esperto di CSRD, ESRS e GHG Protocol.
+SYSTEM_PROMPT = """Sei un consulente senior di sostenibilitÃ , esperto di CSRD, ESRS e GHG Protocol.
 Rispondi in italiano, in modo sintetico, con tabelle quando confronti dati.
 Usa il formato Markdown: le tabelle sempre in Markdown, mai in HTML.
-Quando ricevi dati numerici, prima di qualsiasi considerazione controlla la qualità dei dati
-(unità incoerenti, valori anomali rispetto agli altri mesi, dati mancanti) e segnala cosa trovi.
+Quando ricevi dati numerici, prima di qualsiasi considerazione controlla la qualitÃ  dei dati
+(unitÃ  incoerenti, valori anomali rispetto agli altri mesi, dati mancanti) e segnala cosa trovi.
 Indica sempre fattori di emissione e fonti quando li usi.
-Se un'informazione non è nei documenti o non la conosci, dillo esplicitamente."""
+Se un'informazione non Ã¨ nei documenti o non la conosci, dillo esplicitamente."""
