@@ -34,13 +34,15 @@ winget install --id Git.Git --exact --source winget
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-Al termine **chiudete e riaprite VS Code** e verificate:
+Al termine **chiudete e riaprite VS Code**, riaprite il terminale PowerShell integrato e verificate che tutto sia installato:
 
 ```powershell
-python check_requisiti.py
+python --version
+git --version
+uv --version
 ```
 
-Dovete vedere `[OK]` per Python, Git e uv. Lo script non installa e non modifica nulla.
+Ogni comando deve rispondere con un numero di versione. Python deve essere 3.10 o successivo.
 
 ### 4️⃣ API key del Generative Engine
 
@@ -55,6 +57,16 @@ git clone https://github.com/skunkrm/gen-eng-sust-workshop.git
 cd gen-eng-sust-workshop
 ```
 
+### Verifica automatica dei requisiti
+
+Dopo il clone, prima di passare ai branch numerati:
+
+```powershell
+python check_requisiti.py
+```
+
+In alternativa aprite `check_requisiti.py` in VS Code e cliccate **▶ Esegui file Python** in alto a destra (se il pulsante non c'è, installate l'estensione **Python** di Microsoft). Dovete vedere `[OK]` per Python, Git e uv. Lo script non installa e non modifica nulla.
+
 Il branch `main` contiene **prompt** e **documenti di test**. Il codice funzionante è nei branch numerati:
 
 ```powershell
@@ -66,9 +78,21 @@ git checkout 3-agente-esg       # Step 3 — agente con calcolo emissioni, grafi
 
 In ogni branch:
 
-1. copiate `.env.example` in `.env` e inserite la vostra chiave in `GEN_ENGINE_API_KEY`;
+1. copiate `.env.example` in `.env` e inserite la vostra chiave in `GEN_ENGINE_API_KEY` (per l'host europeo, togliete il `#` davanti alla riga `GEN_ENGINE_BASE_URL` con `generative-eu` e mettetelo davanti a quella US);
 2. eseguite `uv sync`;
 3. avviate: `uv run main.py` nello step 0, `uv run streamlit run app.py` dagli step 1 in poi.
+
+Per esempio, per lo step 0:
+
+```powershell
+git checkout 0-prima-chiamata
+Copy-Item .env.example .env
+code .env
+uv sync
+uv run main.py
+```
+
+`code .env` apre il file in VS Code per inserire la chiave. Il file `.env` resta solo sul vostro PC e passa da un branch all'altro, quindi basta crearlo una volta.
 
 > Il file `.env` contiene la vostra chiave: non condividetelo e non mostratelo a schermo. È già escluso da git.
 
