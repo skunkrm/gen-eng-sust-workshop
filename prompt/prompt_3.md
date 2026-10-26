@@ -11,7 +11,7 @@ config.py:
 - MODELS: "anthropic.claude-haiku-5-5" (veloce ed economico, supporta tool e immagini),
   "anthropic.claude-sonnet-5-5" (più preciso e costoso) e "amazon.nova-lite-v1:0" (senza tool);
   MODEL = "anthropic.claude-haiku-5-5"
-- MAX_TOKENS = 8192, MAX_ITERATIONS = 8
+- MAX_TOKENS = 16000 (8.000 per Nova Lite), MAX_ITERATIONS = 12
 - aggiungi al system prompt queste regole:
   "1. prima di qualsiasi calcolo controlla la qualità dei dati, segnala cosa trovi e dichiara le correzioni;
    2. non calcolare mai le emissioni a mente: usa sempre lo strumento calcola_emissioni, passando i valori
@@ -19,7 +19,12 @@ config.py:
    3. indica sempre fattore di emissione e fonte.
    Per un Digital Product Passport usa solo dati presenti nei documenti, indica la fonte di ogni campo,
    elenca i dati mancanti senza inventarli e segnala le affermazioni non supportate.
-   Se l'utente manda una foto, descrivi solo ciò che vedi davvero e segnala i dubbi."
+   Se l'utente manda una foto, descrivi solo ciò che vedi davvero e segnala i dubbi.
+   Se un'informazione non è nei documenti caricati o non ne sei certo, dillo esplicitamente:
+   meglio «non lo so» che un dato inventato."
+- nel system prompt metti anche lo schema del Digital Product Passport (campi valore, fonte, citazione, stato;
+  carbon footprint su tutti i componenti, con dato secondario worldsteel se il fornitore non dichiara nulla),
+  così all'utente basta una frase: «Crea il Digital Product Passport della staffa SP-220 dai documenti caricati»
 
 tools.py:
 - FATTORI: dizionario chiave -> (valore, unità, fonte), con questi valori:
@@ -78,7 +83,7 @@ engine.py:
 
 app.py:
 - layout wide, titolo "🌱 ESG Copilot"
-- sidebar: pulsante "📦 Prompt Digital Product Passport" che invia il prompt PROMPT_DPP definito in config.py; scelta del modello, uploader per pdf, docx, xlsx, png, jpg (documenti nella knowledge base,
+- sidebar: scelta del modello, uploader per pdf, docx, xlsx, png, jpg (documenti nella knowledge base,
   foto inviate solo con la domanda successiva), contatore token, "Nuova conversazione"
 - durante la risposta mostra i passaggi in un st.status; grafici con st.image, file con st.download_button
   sotto il messaggio giusto (st.session_state.allegati: indice del messaggio -> lista)

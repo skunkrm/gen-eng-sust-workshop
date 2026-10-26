@@ -9,7 +9,7 @@ Struttura da generare: config.py, engine.py, app.py
 config.py:
 - legge GEN_ENGINE_API_KEY e GEN_ENGINE_BASE_URL dal file .env; se la chiave manca, termina con un messaggio chiaro
 - crea il client OpenAI come variabile di modulo
-- MODEL = "amazon.nova-lite-v1:0" e MAX_TOKENS = 4096
+- MODEL = "anthropic.claude-haiku-5-5" e MAX_TOKENS = 16000
 - SYSTEM_PROMPT con questo testo:
   "Sei un consulente senior di sostenibilità, esperto di CSRD, ESRS e GHG Protocol.
   Rispondi in italiano, in modo sintetico, con tabelle quando confronti dati.
