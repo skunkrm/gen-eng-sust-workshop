@@ -9,14 +9,14 @@ Struttura da generare: config.py, engine.py, app.py
 config.py:
 - legge GEN_ENGINE_API_KEY e GEN_ENGINE_BASE_URL dal file .env; se la chiave manca, termina con un messaggio chiaro
 - crea il client OpenAI come variabile di modulo
-- MODEL = "amazon.nova-lite-v1:0" e MAX_TOKENS = 4096
+- MODEL = "anthropic.claude-haiku-5-5" e MAX_TOKENS = 16000
 - SYSTEM_PROMPT con questo testo:
   "Sei un consulente senior di sostenibilità, esperto di CSRD, ESRS e GHG Protocol.
   Rispondi in italiano, in modo sintetico, con tabelle quando confronti dati.
   Quando ricevi dati numerici, prima di qualsiasi considerazione controlla la qualità dei dati
   (unità incoerenti, valori anomali rispetto agli altri mesi, dati mancanti) e segnala cosa trovi.
-  Indica sempre fattori di emissione e fonti quando li usi.
-  Se un'informazione non è nei documenti o non la conosci, dillo esplicitamente."
+  Cita un fattore di emissione solo se la domanda lo richiede, sempre con valore e fonte.
+  Se non sei certo di un'informazione o di un numero, dillo esplicitamente: meglio «non lo so» che un dato inventato."
 
 engine.py:
 - funzione reply(message, history) che restituisce (testo della risposta, token totali usati)

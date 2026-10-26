@@ -17,8 +17,10 @@ extractor.py (nuovo):
 config.py:
 - aggiungi MODELS, un dizionario modello -> descrizione:
   "amazon.nova-lite-v1:0": "Economico, meno preciso"
+  "anthropic.claude-haiku-5-5": "Veloce, preciso, costa poco"
   "anthropic.claude-sonnet-5-5": "Più costoso, più preciso"
-- MODEL resta "amazon.nova-lite-v1:0"
+- MODEL = "amazon.nova-lite-v1:0": si parte dal più economico per confrontarlo con gli altri
+- Nova Lite accetta al massimo 10.000 token di risposta: per lui usa un tetto di 8.000
 
 engine.py:
 - reply(message, history, knowledge_base="", model=MODEL)
