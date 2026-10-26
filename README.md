@@ -112,7 +112,8 @@ flowchart LR
 | 0 | [`prompt/prompt_0.md`](prompt/prompt_0.md) | `0-prima-chiamata` | `main.py`: una domanda al modello dal terminale |
 | 1 | [`prompt/prompt_1.md`](prompt/prompt_1.md) | `1-consulente-esg` | `app.py`, `config.py`, `engine.py`: chatbot web con il consulente ESG |
 | 2 | [`prompt/prompt_2.md`](prompt/prompt_2.md) | `2-gap-analysis` | `extractor.py`: upload di PDF, Word ed Excel |
-| 3 | [`prompt/prompt_3.md`](prompt/prompt_3.md) | `3-agente-esg` | `tools.py`, `generator.py`: calcolo emissioni, grafici, report scaricabili, foto |
+| 3 | [`prompt/prompt_3.md`](prompt/prompt_3.md) | `3-agente-esg` | `tools.py`, `inventario.py`, `generator.py`: inventario GHG, verifica delle fonti, grafici, report Excel e PDF, Digital Product Passport, verbale HSE da foto |
+| UI | [`prompt/prompt_ui.md`](prompt/prompt_ui.md) | dallo step 1 | `ui.py` e `.streamlit/config.toml`: l'interfaccia, con tempi e costi in tempo reale |
 
 Ogni step si costruisce incollando il prompt in un LLM, per esempio gli [agenti del Generative Engine](https://generative.engine.capgemini.com/agents). Dove il prompt dice `[incolla qui …]`, incollate i file prodotti nello step precedente. Se qualcosa non funziona al primo colpo, incollate l'errore all'LLM: di solito in uno o due passaggi è risolto. I branch sono i **checkpoint**: se vi perdete, ripartite da lì.
 
@@ -182,7 +183,7 @@ Il Generative Engine ha un endpoint negli Stati Uniti e uno in Europa, ciascuno 
 
 Dagli step 1 a 3 l'app ha la stessa veste: tema scuro e chiaro (pulsante ☀ nell'intestazione), sfondo animato e il pannello **Tempi e costi** a destra, richiudibile, con il cronometro di ogni richiesta, i token divisi in input e output e il costo calcolato con i prezzi del modello scelto. Sotto ogni risposta trovate tempo, token, costo e modello di quella richiesta.
 
-La grafica sta tutta in `ui.py` e `.streamlit/config.toml`: non viene dai prompt degli step, ma è stata costruita allo stesso modo, descrivendo all'AI cosa si voleva vedere e rifinendo una richiesta alla volta. Cambiatela come volete: il resto dell'app non ne dipende.
+La grafica sta tutta in `ui.py` e `.streamlit/config.toml`: non viene dai prompt degli step, ma è stata costruita allo stesso modo, descrivendo all'AI cosa si voleva vedere e rifinendo una richiesta alla volta: il prompt che la descrive e le richieste fatte, in ordine, sono in [`prompt/prompt_ui.md`](prompt/prompt_ui.md). Cambiatela come volete: il resto dell'app non ne dipende.
 
 In alto nell'intestazione c'è anche il pulsante per il **tutto schermo** (si esce con Esc).
 
