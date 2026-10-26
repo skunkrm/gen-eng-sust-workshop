@@ -1,5 +1,6 @@
 """Generazione di file (PDF, Word, Excel) e grafici, sempre in memoria con BytesIO."""
 
+import json
 import re
 from io import BytesIO
 
@@ -18,6 +19,7 @@ MIME = {
     "pdf": "application/pdf",
     "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "json": "application/json",
 }
 
 
@@ -221,6 +223,13 @@ def make_document(formato, nome_file, titolo, contenuto, grafico=None):
         dati = _docx(titolo, contenuto, grafico)
     elif formato == "pdf":
         dati = _pdf(titolo, contenuto, grafico)
+    elif formato == "json":
+        testo = contenuto.strip().removeprefix("```json").removeprefix("```").removesuffix("```")
+        try:
+            oggetto = json.loads(testo)
+        except json.JSONDecodeError as errore:
+            raise ValueError(f"il contenuto non è JSON valido ({errore}): correggilo e riprova") from errore
+        dati = json.dumps(oggetto, ensure_ascii=False, indent=2).encode("utf-8")
     else:
         raise ValueError(f"Formato non supportato: {formato}")
     nome = re.sub(r"[^\w\-]+", "_", nome_file).strip("_") or "documento"

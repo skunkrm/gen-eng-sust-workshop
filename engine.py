@@ -6,6 +6,7 @@ può mostrare all'utente cosa sta facendo l'agente. Tipi di evento:
   ("calc", dati)    risultato del calcolo delle emissioni
   ("chart", dati)   grafico creato
   ("file", dati)    file creato, da scaricare
+  ("check", dati)   verifica delle fonti non superata
   ("tokens", n)     token usati da una chiamata
   ("done", testo)   risposta finale
 """
@@ -49,6 +50,7 @@ def build_messages(message, history, knowledge_base="", images=None):
 
 def reply(message, history, knowledge_base="", model=MODEL, images=None, stato=None):
     stato = {} if stato is None else stato
+    stato["documenti"] = knowledge_base  # serve alla verifica delle fonti
     messages = build_messages(message, history, knowledge_base, images)
 
     try:

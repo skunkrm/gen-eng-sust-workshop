@@ -2,7 +2,7 @@
 
 import streamlit as st
 
-from config import MODEL, MODELS
+from config import MODEL, MODELS, PROMPT_DPP
 from engine import reply
 from extractor import build_knowledge_base
 
@@ -39,6 +39,10 @@ with st.sidebar:
     if nuove_foto:
         st.info(f"{len(nuove_foto)} foto verranno inviate con la prossima domanda")
 
+    st.subheader("Prompt pronti")
+    if st.button("📦 Prompt Digital Product Passport"):
+        st.session_state.prompt_pronto = PROMPT_DPP
+
     st.metric("Token usati in questa sessione", f"{st.session_state.tokens:,}".replace(",", "."))
     if st.button("Nuova conversazione"):
         for chiave in ("messages", "allegati", "stato"):
@@ -64,7 +68,8 @@ for indice, m in enumerate(st.session_state.messages):
         st.markdown(m["content"])
         mostra_allegati(indice)
 
-if domanda := st.chat_input("Chiedi qualcosa al consulente ESG…"):
+domanda = st.chat_input("Chiedi qualcosa al consulente ESG…") or st.session_state.pop("prompt_pronto", None)
+if domanda:
     immagini = [{"data": f.getvalue(), "mime": f.type or "image/jpeg", "name": f.name} for f in nuove_foto]
     indice_utente = len(st.session_state.messages)
     st.session_state.allegati[indice_utente] = [{"tipo": "foto", "data": i["data"]} for i in immagini]
@@ -82,15 +87,27 @@ if domanda := st.chat_input("Chiedi qualcosa al consulente ESG…"):
                     if tipo == "step":
                         st.markdown(dati)
                     elif tipo == "calc":
-                        st.markdown(f"🧮 Calcolate **{dati['numero_voci']} voci**: "
-                                    + ", ".join(f"{k} = {v:,.1f} t CO2e" for k, v in dati["totali_per_scope_t_CO2e"].items()))
+                        if dati["totale_t_CO2e"] >= 1:
+                            sintesi = ", ".join(f"{k} = {v:,.1f} t CO2e" for k, v in dati["totali_per_scope_t_CO2e"].items())
+                        else:  # valori piccoli, per esempio un singolo prodotto: meglio in kg
+                            sintesi = f"totale = {dati['totale_kg_CO2e']:,.2f} kg CO2e"
+                        st.markdown(f"🧮 Calcolate **{dati['numero_voci']} voci**: {sintesi}")
                     elif tipo == "chart":
                         allegati.append({"tipo": "chart", **dati})
                         st.markdown(f"📊 Grafico creato: {dati['titolo']}")
+                    elif tipo == "check":
+                        st.markdown(f"🔎 **Verifica delle fonti non superata**: {len(dati['errori'])} problemi, "
+                                    "il modello deve correggere")
+                        for errore in dati["errori"][:5]:
+                            st.markdown(f"- {errore}")
                     elif tipo == "file":
                         allegati.append({"tipo": "file", **dati})
                         nomi_file.append(dati["filename"])
                         st.markdown(f"📄 File creato: {dati['filename']}")
+                        if dati.get("verifica"):
+                            v = dati["verifica"]
+                            st.markdown(f"🔎 Verifica delle fonti superata: {v['citazioni_verificate']} citazioni "
+                                        f"trovate nei documenti, {v['campi_mancanti']} campi mancanti dichiarati")
                     elif tipo == "tokens":
                         st.session_state.tokens += dati
                     elif tipo == "done":
