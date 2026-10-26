@@ -17,7 +17,7 @@ extractor.py (nuovo):
 config.py:
 - aggiungi MODELS, un dizionario modello -> descrizione:
   "amazon.nova-lite-v1:0": "Economico, meno preciso"
-  "anthropic.claude-sonnet-4-6": "Più costoso, più preciso"
+  "anthropic.claude-sonnet-5-5": "Più costoso, più preciso"
 - MODEL resta "amazon.nova-lite-v1:0"
 
 engine.py:
