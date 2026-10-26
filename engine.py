@@ -52,6 +52,8 @@ def reply(message, history, knowledge_base="", model=MODEL, images=None, stato=N
     stato = {} if stato is None else stato
     stato["documenti"] = knowledge_base  # serve alla verifica delle fonti
     messages = build_messages(message, history, knowledge_base, images)
+    solleciti = 0  # quante volte abbiamo chiesto al modello di completare un'azione lasciata a metà
+    ultimo_fallito = False  # l'ultimo strumento ha restituito un errore o una verifica non superata
 
     try:
         for giro in range(1, MAX_ITERATIONS + 1):
@@ -65,8 +67,19 @@ def reply(message, history, knowledge_base="", model=MODEL, images=None, stato=N
             msg = scelta.message
 
             if not msg.tool_calls:
-                if scelta.finish_reason == "length":
-                    yield ("step", "⚠️ Risposta troncata: aumenta MAX_TOKENS in config.py")
+                troncata = scelta.finish_reason == "length"
+                if troncata:
+                    yield ("step", "⚠️ Risposta troncata dal limite di lunghezza.")
+                # Se l'ultimo strumento era fallito (o la risposta è stata tagliata) e il modello si ferma
+                # senza riprovare, gli chiediamo di completare: al massimo due volte
+                if (ultimo_fallito or troncata) and solleciti < 2:
+                    solleciti += 1
+                    yield ("step", f"Giro {giro}: il modello si è fermato prima di finire, gli chiedo di completare.")
+                    messages.append({"role": "assistant", "content": msg.content or "Riprovo."})
+                    messages.append({"role": "user", "content": (
+                        "Completa ora l'operazione: richiama lo strumento con le correzioni indicate. "
+                        "Se è un JSON lungo, usa citazioni brevi (5-12 parole) per restare nel limite di lunghezza.")})
+                    continue
                 yield ("step", f"Giro {giro}: nessuno strumento da usare, risposta pronta.")
                 yield ("done", msg.content or "")
                 return
@@ -92,6 +105,7 @@ def reply(message, history, knowledge_base="", model=MODEL, images=None, stato=N
                 else:
                     yield ("step", f"Giro {giro}: uso lo strumento **{nome}**")
                     risultato, evento = execute_tool(nome, args, stato)
+                ultimo_fallito = risultato.startswith(("Errore", "File NON creato", "Argomenti non validi", "Nessun"))
                 if evento:
                     yield evento
                 # Il risultato torna al modello con ruolo "tool", collegato alla sua chiamata

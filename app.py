@@ -61,6 +61,9 @@ def mostra_allegati(indice):
                                mime=a["mime"], key=f"f{indice}_{i}")
         elif a["tipo"] == "foto":
             st.image(a["data"], width=260)
+        elif a["tipo"] == "passi":
+            with st.expander("Passaggi dell'agente"):
+                st.markdown("\n".join(f"- {r}" for r in a["righe"]))
 
 
 for indice, m in enumerate(st.session_state.messages):
@@ -82,7 +85,7 @@ if domanda:
                                             if f.name.lower().endswith(".xlsx")]
 
     indice_risposta = indice_utente + 1
-    allegati, nomi_file, testo = [], [], ""
+    allegati, nomi_file, testo, passi = [], [], "", []
     with st.chat_message("assistant"):
         with st.status("L'agente sta lavorando…", expanded=True) as pannello:
             try:
@@ -90,20 +93,24 @@ if domanda:
                                         modello, immagini, st.session_state.stato):
                     if tipo == "step":
                         st.markdown(dati)
+                        passi.append(dati)
                     elif tipo == "calc":
                         if dati["totale_t_CO2e"] >= 1:
                             sintesi = ", ".join(f"{k} = {v:,.1f} t CO2e" for k, v in dati["totali_per_scope_t_CO2e"].items())
                         else:  # valori piccoli, per esempio un singolo prodotto: meglio in kg
                             sintesi = f"totale = {dati['totale_kg_CO2e']:,.2f} kg CO2e"
                         st.markdown(f"🧮 Calcolate **{dati['numero_voci']} voci**: {sintesi}")
+                        passi.append(f"🧮 Calcolate {dati['numero_voci']} voci: {sintesi}")
                     elif tipo == "chart":
                         allegati.append({"tipo": "chart", **dati})
                         st.markdown(f"📊 Grafico creato: {dati['titolo']}")
                     elif tipo == "check":
                         st.markdown(f"🔎 **Verifica delle fonti non superata**: {len(dati['errori'])} problemi, "
                                     "il modello deve correggere")
+                        passi.append(f"🔎 Verifica delle fonti non superata: {len(dati['errori'])} problemi")
                         for errore in dati["errori"][:5]:
                             st.markdown(f"- {errore}")
+                            passi.append(f"    {errore}")
                     elif tipo == "file":
                         allegati.append({"tipo": "file", **dati})
                         nomi_file.append(dati["filename"])
@@ -112,6 +119,9 @@ if domanda:
                             v = dati["verifica"]
                             st.markdown(f"🔎 Verifica delle fonti superata: {v['citazioni_verificate']} citazioni "
                                         f"trovate nei documenti, {v['campi_mancanti']} campi mancanti dichiarati")
+                            passi.append(f"🔎 Verifica superata: {v['citazioni_verificate']} citazioni, "
+                                         f"{v['campi_mancanti']} campi mancanti")
+                        passi.append(f"📄 File creato: {dati['filename']}")
                     elif tipo == "tokens":
                         st.session_state.tokens += dati
                     elif tipo == "done":
@@ -129,5 +139,7 @@ if domanda:
         {"role": "user", "content": domanda},
         {"role": "assistant", "content": testo},
     ]
+    if passi:
+        allegati.append({"tipo": "passi", "righe": passi})
     st.session_state.allegati[indice_risposta] = allegati
     st.rerun()

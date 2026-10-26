@@ -217,11 +217,11 @@ def calcola_emissioni(voci):
 
 def _normalizza(testo):
     """Per confrontare citazioni e documenti ignoriamo il formato, non il contenuto:
-    minuscole, niente virgolette, asterischi e separatori | delle tabelle, spazi compattati."""
-    testo = str(testo).lower().replace("\u00a0", " ").replace("|", " ")
-    testo = re.sub(r"[«»\"“”'’‘`*]", "", testo)
-    testo = re.sub(r"\s+", " ", testo).strip()
-    return testo.strip(" .,;:")
+    restano solo parole, numeri e il simbolo %, in minuscolo (punteggiatura, separatori | e virgolette ignorati)."""
+    testo = str(testo).lower()
+    testo = re.sub(r"(?<=\d)[.,](?=\d)", "", testo)    # 3,21 e 3.21 diventano 321
+    testo = re.sub(r"[^\w%]+", " ", testo)              # restano solo parole, numeri e %
+    return re.sub(r"\s+", " ", testo).strip()
 
 
 def _campi_con_stato(nodo, percorso=""):

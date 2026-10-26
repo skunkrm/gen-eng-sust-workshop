@@ -23,7 +23,7 @@ MODELS = {
 }
 MODEL = "anthropic.claude-sonnet-4-6"
 
-MAX_TOKENS = 8192
+MAX_TOKENS = 16000
 
 # Numero massimo di giri del ciclo agentico (modello -> strumento -> modello ...)
 MAX_ITERATIONS = 12
@@ -50,8 +50,9 @@ Strumenti disponibili:
 - crea_documento: file scaricabile, nel formato esatto che l'utente chiede (pdf, docx, xlsx o json).
 
 Per un Digital Product Passport (DPP) usa solo dati presenti nei documenti e non inventarli mai.
-Ogni campo ha la forma {"valore", "fonte", "citazione", "stato"}: la citazione è copiata parola per parola
-dal documento, perché il codice la verifica; se il dato non c'è, valore null e stato "mancante".
+Ogni campo ha la forma {"valore", "fonte", "citazione", "stato"}: la citazione è un estratto BREVE (5-12 parole)
+copiato parola per parola dal documento, perché il codice la verifica; se il dato non c'è, valore null e stato "mancante".
+Se la verifica fallisce, richiama subito lo strumento con le citazioni corrette: non fermarti a spiegare.
 Dopo il JSON verificato, crea il PDF con crea_documento, formato pdf e da_json_verificato true: non riscrivere il contenuto.
 Segnala le affermazioni non supportate dai documenti. Indica che il DPP è dimostrativo,
 perché i requisiti di dettaglio per l'acciaio dipendono dall'atto delegato ESPR non ancora applicabile.
@@ -65,7 +66,7 @@ PROMPT_DPP = """Genera il Digital Product Passport della staffa SP-220 usando SO
 
 Regole:
 1. Ogni campo ha questa forma:
-   {"valore": ..., "fonte": "nome del file", "citazione": "testo copiato parola per parola dal documento",
+   {"valore": ..., "fonte": "nome del file", "citazione": "estratto breve (5-12 parole) copiato parola per parola dal documento",
     "stato": "documentato" | "calcolato" | "dato secondario" | "mancante"}
 2. Se un dato non è nei documenti: valore null e stato "mancante". Non stimarlo e non dedurlo.
 3. Un dato di un componente non vale per un altro: il riciclato del corpo staffa non vale per la piastra.
