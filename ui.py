@@ -13,12 +13,15 @@ Niente librerie esterne: CSS e JavaScript puro, inseriti con st.html.
 
 import html
 import json
+import os
 
 import streamlit as st
 
 from config import PREZZI
 
 NOME = "Sustainability Copilot"  # il nome dell'agente, in un punto solo
+# Stile grafico: "carta" (bianco e pulito), "aurora" (bianco con luce nell'intestazione), "ardesia" (scuro e animato)
+STILE = os.getenv("ESG_STILE", "carta")
 AVATAR_UTENTE = ":material/person:"
 AVATAR_AGENTE = ":material/eco:"
 BUDGET_MENSILE = 4.0  # dollari del piano gratuito del Generative Engine
@@ -71,7 +74,7 @@ html[data-esg-tema="chiaro"] #esg-aurora { opacity: .8; }
 .stMain [data-testid="stMarkdownContainer"], .stMain p,
 .stMain li, .stMain h1, .stMain h2, .stMain h3,
 .stMain td, .stMain th, .stMain summary { color: var(--testo); }
-html[data-esg-tema="chiaro"] .stMain :where(p, li, h1, h2, h3, h4, td, th, summary, em, span, label, textarea):not(.esg-testata *):not([data-testid="stDownloadButton"] *):not([data-testid="stIconMaterial"]) {
+.stMain :where(p, li, h1, h2, h3, h4, td, th, summary, em, span, label, textarea):not(.esg-testata *):not([data-testid="stDownloadButton"] *):not([data-testid="stIconMaterial"]) {
   color: var(--testo) !important; }
 html[data-esg-tema="chiaro"] .stMain strong:not(.esg-testata *) { color: var(--menta) !important; }
 html[data-esg-tema="chiaro"] [data-testid="stChatInput"] textarea::placeholder { color: #6B8077 !important; }
@@ -281,6 +284,90 @@ html[data-esg-tema="chiaro"] [data-testid="stChatMessage"] [data-testid="stExpan
 
 :focus-visible { outline: 2px solid var(--lichene) !important; outline-offset: 2px; }
 
+
+/* ================= STILI CHIARI E PULITI: "carta" e "aurora" ================= */
+html[data-esg-tema="chiaro"] {
+  --fondo: #FFFFFF; --testo: #17211C; --testo-2: #56655D;
+  --vetro: #FFFFFF; --vetro-forte: #FFFFFF; --bordo: #DFE6E2; --luce: rgba(255, 255, 255, 0);
+  --lichene: #2E7D47; --ambra: #B0650A; --menta: #1D6B37;
+  --ombra: 0 1px 2px rgba(16, 24, 20, .05), 0 10px 28px -18px rgba(16, 24, 20, .22);
+  --tabella-testa: #EEF3F0;
+}
+/* meno fronzoli: niente vetro sfocato, niente luce che segue il mouse, niente riflessi continui */
+html:is([data-esg-stile="carta"], [data-esg-stile="aurora"]) :is(.esg-vetro, [data-testid="stChatMessage"], [data-testid="stChatInput"] > div) {
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+html:is([data-esg-stile="carta"], [data-esg-stile="aurora"]) :is([data-testid="stChatMessage"], .esg-testata)::before { display: none; }
+html:is([data-esg-stile="carta"], [data-esg-stile="aurora"]) [data-testid="stDownloadButton"] button::after { display: none; }
+html:is([data-esg-stile="carta"], [data-esg-stile="aurora"]) [data-testid="stChatMessage"] tbody tr { animation: none; }
+html:is([data-esg-stile="carta"], [data-esg-stile="aurora"]) [data-testid="stChatMessage"] { animation-duration: .4s; }
+
+/* conversazione e tabelle nel tema chiaro: alto contrasto */
+html[data-esg-tema="chiaro"] [data-testid="stChatMessage"] { box-shadow: var(--ombra); }
+html[data-esg-tema="chiaro"] [data-testid="stChatMessage"] [data-testid="stExpander"] details { background: #F7F9F8; }
+html[data-esg-tema="chiaro"] [data-testid="stChatMessage"] th { color: #17211C !important; }
+html[data-esg-tema="chiaro"] [data-testid="stChatMessageAvatarCustom"] { background: #E8F3EC !important; border-color: #CFE5D6; }
+html[data-esg-tema="chiaro"] [data-testid="stDownloadButton"] button { background: #2E7D47 !important; color: #FFFFFF !important;
+  box-shadow: 0 6px 16px -8px rgba(46, 125, 71, .7); }
+html[data-esg-tema="chiaro"] [data-testid="stDownloadButton"] button p { color: #FFFFFF !important; }
+html[data-esg-tema="chiaro"] [data-testid="stChatInputSubmitButton"] { background: #2E7D47 !important; color: #FFFFFF !important; }
+html[data-esg-tema="chiaro"] [data-testid="stChatInput"] > div { background: #FFFFFF !important; border: 1.5px solid #C9D3CD !important; }
+
+/* pannello Tempi e costi e pillola nel tema chiaro */
+html[data-esg-tema="chiaro"] .esg-pannello, html[data-esg-tema="chiaro"] .esg-pillola {
+  background: #FFFFFF; color: #17211C; border: 1px solid #DFE6E2; backdrop-filter: none; -webkit-backdrop-filter: none;
+  box-shadow: 0 1px 2px rgba(16, 24, 20, .05), 0 16px 40px -24px rgba(16, 24, 20, .3); }
+html[data-esg-tema="chiaro"] .esg-pannello-testa h4 { color: #17211C; }
+html[data-esg-tema="chiaro"] .esg-chiudi { color: #17211C; background: #F2F5F3; border-color: #DFE6E2; }
+html[data-esg-tema="chiaro"] .esg-strumento { background: #F7F9F8; border-color: #E6ECE8; }
+html[data-esg-tema="chiaro"] .esg-strumento span, html[data-esg-tema="chiaro"] .esg-strumento small,
+html[data-esg-tema="chiaro"] .esg-strumento small span, html[data-esg-tema="chiaro"] .esg-budget-nota { color: #56655D; }
+html[data-esg-tema="chiaro"] .esg-strumento b { color: #17211C; }
+html[data-esg-tema="chiaro"] .esg-strumento.tempo b { color: #1D6B37; }
+html[data-esg-tema="chiaro"] .esg-strumento.costo { background: #FFF7EC; border-color: #F1D6AE; }
+html[data-esg-tema="chiaro"] .esg-strumento.costo b, html[data-esg-tema="chiaro"] .esg-pillola .c { color: #A45C06; text-shadow: none; }
+html[data-esg-tema="chiaro"] .esg-pillola b { color: #17211C; }
+html[data-esg-tema="chiaro"] .esg-budget { background: #E9EEEB; }
+
+/* ---------- CARTA: bianco, tipografia, una linea viva ---------- */
+html[data-esg-stile="carta"][data-esg-tema="chiaro"] [data-testid="stSidebar"] { background: #F5F7F6 !important;
+  backdrop-filter: none; border-right: 1px solid #E3E8E5; }
+html[data-esg-stile="carta"][data-esg-tema="chiaro"] [data-testid="stSidebar"] h3 { color: #56655D; }
+html[data-esg-stile="carta"][data-esg-tema="chiaro"] .esg-testata { background: #FFFFFF !important; color: #17211C;
+  border: 1px solid #DFE6E2 !important; box-shadow: var(--ombra); }
+html[data-esg-stile="carta"] .esg-testata { padding-bottom: 3.6rem !important; }
+html[data-esg-stile="carta"] .esg-testata::before { display: block !important; content: ""; position: absolute; left: 0; right: 0; bottom: 0; top: auto;
+  height: 46px; opacity: 1; pointer-events: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 90' preserveAspectRatio='none'%3E %3Cstyle%3E.l%7Bfill:none;stroke:%232E7D47;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:700;stroke-dashoffset:700;animation:d 2.2s cubic-bezier(.16,1,.3,1) .3s forwards%7D .a%7Bfill:url(%23g);opacity:0;animation:f 1.2s ease 1.6s forwards%7D%40keyframes d%7Bto%7Bstroke-dashoffset:0%7D%7D%40keyframes f%7Bto%7Bopacity:1%7D%7D %40media (prefers-reduced-motion:reduce)%7B.l%7Banimation:none;stroke-dashoffset:0%7D.a%7Banimation:none;opacity:1%7D%7D%3C/style%3E %3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%232E7D47' stop-opacity='.16'/%3E%3Cstop offset='1' stop-color='%232E7D47' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E %3Cpolygon class='a' points='0,70 40,62 80,66 120,50 160,54 200,40 240,46 280,30 320,36 360,22 400,28 440,16 480,20 480,90 0,90'/%3E%3Cpolyline class='l' points='0,70 40,62 80,66 120,50 160,54 200,40 240,46 280,30 320,36 360,22 400,28 440,16 480,20'/%3E%3C/svg%3E") center / 100% 100% no-repeat; }
+html[data-esg-stile="carta"] .esg-testata.lavoro::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 90' preserveAspectRatio='none'%3E %3Cstyle%3E.b%7Bfill:none;stroke:%232E7D47;stroke-opacity:.35;stroke-width:2.2%7D.m%7Bfill:none;stroke:%23C77712;stroke-width:3;stroke-linecap:round;stroke-dasharray:60 640;animation:m 1.6s linear infinite%7D %40keyframes m%7Bfrom%7Bstroke-dashoffset:0%7Dto%7Bstroke-dashoffset:-700%7D%7D%3C/style%3E %3Cpolyline class='b' points='0,70 40,62 80,66 120,50 160,54 200,40 240,46 280,30 320,36 360,22 400,28 440,16 480,20'/%3E%3Cpolyline class='m' points='0,70 40,62 80,66 120,50 160,54 200,40 240,46 280,30 320,36 360,22 400,28 440,16 480,20'/%3E%3C/svg%3E"); }
+html[data-esg-stile="carta"][data-esg-tema="chiaro"] .esg-titolo { background: none; -webkit-text-fill-color: #17211C; color: #17211C;
+  animation: none; position: relative; }
+html[data-esg-stile="carta"][data-esg-tema="chiaro"] .esg-macchina { color: #56655D; position: relative; }
+html[data-esg-stile="carta"][data-esg-tema="chiaro"] .esg-macchina b { color: #17211C; }
+html[data-esg-tema="chiaro"] .esg-stato { background: #E8F3EC; border-color: #CFE5D6; color: #1D6B37; }
+html[data-esg-tema="chiaro"] .esg-stato i { box-shadow: none; background: #2E7D47; }
+html[data-esg-tema="chiaro"] .esg-testata.lavoro .esg-stato { background: #FDF1E1; border-color: #F1D6AE; color: #8A4F05; }
+html[data-esg-tema="chiaro"] .esg-testata.lavoro .esg-stato i { background: #C77712; }
+html[data-esg-tema="chiaro"] .esg-tema { background-color: #F2F5F3; border-color: #DFE6E2; color: #17211C; }
+html[data-esg-tema="chiaro"] .esg-schermo { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2317211C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5'/%3E%3C/svg%3E"); }
+html[data-esg-tema="chiaro"][data-esg-schermo="pieno"] .esg-schermo { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2317211C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5'/%3E%3C/svg%3E"); }
+
+/* ---------- AURORA: bianco, intestazione con una luce morbida che si muove ---------- */
+html[data-esg-stile="aurora"][data-esg-tema="chiaro"] .esg-testata { color: #17211C; border: 1px solid #DCE8E1 !important;
+  background: linear-gradient(115deg, #E4F4EA 0%, #E3EFF5 30%, #FBF1E3 55%, #E4F4EA 80%, #E3EFF5 100%) !important;
+  background-size: 300% 300% !important; animation: esg-luce 18s ease-in-out infinite alternate; box-shadow: var(--ombra); }
+html[data-esg-stile="aurora"][data-esg-tema="chiaro"] .esg-testata.lavoro { animation-duration: 3s; }
+@keyframes esg-luce { from { background-position: 0% 40%; } to { background-position: 100% 60%; } }
+html[data-esg-stile="aurora"][data-esg-tema="chiaro"] .esg-titolo {
+  background: linear-gradient(100deg, #14432A 0%, #1F6B45 45%, #1E5E70 100%); -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; animation: none; }
+html[data-esg-stile="aurora"][data-esg-tema="chiaro"] .esg-macchina { color: #3F5248; }
+html[data-esg-stile="aurora"][data-esg-tema="chiaro"] .esg-macchina b { color: #17211C; }
+html[data-esg-stile="aurora"][data-esg-tema="chiaro"] .esg-tema { background-color: rgba(255, 255, 255, .7); }
+html[data-esg-stile="aurora"][data-esg-tema="chiaro"] [data-testid="stSidebar"] { background: #15261D !important; backdrop-filter: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-esg-stile="aurora"] .esg-testata { animation: none !important; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .esg-titolo { -webkit-text-fill-color: #FFFFFF; }
@@ -295,7 +382,7 @@ JS = r"""
   const lento = W.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ---------- tema ----------
-  const leggiTema = () => { try { return localStorage.getItem('esg-tema') || 'scuro'; } catch (e) { return 'scuro'; } };
+  const leggiTema = () => { try { return localStorage.getItem('esg-tema') || 'chiaro'; } catch (e) { return 'chiaro'; } };
   D.documentElement.dataset.esgTema = D.documentElement.dataset.esgTema || leggiTema();
 
   if (W.esgPronto) { W.esgAggiorna && W.esgAggiorna(); return; }
@@ -338,8 +425,9 @@ JS = r"""
   }, { passive: true });
 
   // ---------- sfondo: aurora, grana e campo di flusso ----------
-  ['esg-aurora', 'esg-grana'].forEach(id => { if (!D.getElementById(id)) { const d = D.createElement('div'); d.id = id; D.body.prepend(d); } });
-  const tela = D.createElement('canvas'); tela.id = 'esg-tela'; D.body.prepend(tela);
+  const vivo = D.documentElement.dataset.esgStile === 'ardesia';  // particelle e aurora solo nello stile ardesia
+  if (vivo) ['esg-aurora', 'esg-grana'].forEach(id => { if (!D.getElementById(id)) { const d = D.createElement('div'); d.id = id; D.body.prepend(d); } });
+  const tela = D.createElement('canvas'); tela.id = 'esg-tela'; if (vivo) D.body.prepend(tela);
   const ctx = tela.getContext('2d');
   let L = 0, A = 0, particelle = [], energia = .5, obiettivo = .5, t = 0;
   const dpr = Math.min(W.devicePixelRatio || 1, 1.5);
@@ -380,8 +468,8 @@ JS = r"""
     }
     if (!lento && !D.hidden) requestAnimationFrame(passo);
   };
-  D.addEventListener('visibilitychange', () => { if (!D.hidden && !lento) requestAnimationFrame(passo); });
-  if (lento) { for (let i = 0; i < 120; i++) passo(); } else requestAnimationFrame(passo);
+  D.addEventListener('visibilitychange', () => { if (vivo && !D.hidden && !lento) requestAnimationFrame(passo); });
+  if (vivo) { if (lento) { for (let i = 0; i < 120; i++) passo(); } else requestAnimationFrame(passo); }
 
 
 
@@ -454,7 +542,8 @@ def stile():
     Il CSS viene inserito dal JavaScript. Attenzione: dentro lo script niente testo simile a tag HTML
     (il filtro di st.html lo scarterebbe), per questo i '<' nelle stringhe sono scritti come \\u003c."""
     regole = CSS.replace("<style>", "").replace("</style>", "")
-    inserisci = ("(() => { let s = document.getElementById('esg-stile');"
+    inserisci = (f"document.documentElement.dataset.esgStile = '{STILE}';\n"
+                 "(() => { let s = document.getElementById('esg-stile');"
                  " if (!s) { s = document.createElement('style'); s.id = 'esg-stile'; document.head.appendChild(s); }"
                  f" s.textContent = {json.dumps(regole).replace('<', '\\u003c')}; }})();\n")  # '<' scritto come \\u003c per il filtro HTML
     st.html(JS.replace("<script>", "<script>" + inserisci, 1), unsafe_allow_javascript=True)
