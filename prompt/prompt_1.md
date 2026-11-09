@@ -13,6 +13,9 @@ L'interfaccia grafica sta in un file a parte, ui.py, che trovi già pronto nel b
   e il pannello "Tempi e costi"; token, dollari e secondi sono i totali della sessione, ultima è il dizionario
   delle misure dell'ultima richiesta, inizio è time.time() della richiesta in corso (None se il consulente è fermo)
 - misure(a): la riga sotto una risposta, con a = {"secondi", "token", "costo", "modello"}
+- registra_richiesta(a): somma le misure di una richiesta al totale del workshop, salvato in un file nella cartella
+  dell'utente, così il conto sopravvive al riavvio dell'app e somma tutti gli step
+- pulsante_azzera(): il pulsante "Azzera il totale del workshop", da mettere nella sidebar
 - ui.py importa PREZZI da config.py
 
 Struttura da generare: config.py, engine.py, app.py
@@ -57,13 +60,14 @@ app.py:
   "parla la nostra lingua.", "controlla i dati prima di commentarli.", "indica sempre fattori e fonti."
 - in st.session_state: messages, tokens, tok_in, tok_out, costo, secondi (totali della sessione),
   ultima (misure dell'ultima richiesta) e misure (indice del messaggio -> misure di quella risposta)
-- sidebar: il modello (fisso in questo step, si cambia in config.py) e un pulsante "Nuova conversazione"
-  che svuota la chat ma lascia token, costo e tempo, che sono della sessione
+- sidebar: il modello (fisso in questo step, si cambia in config.py), un pulsante "Nuova conversazione"
+  che svuota la chat ma lascia token, costo e tempo, che sono della sessione, e pulsante_azzera()
 - niente pulsanti con domande preimpostate: la domanda la scrive l'utente in st.chat_input
   ("Chiedi qualcosa al consulente di sostenibilità…"); a chat vuota mostra solo un invito, "Da dove partiamo?"
 - a ogni domanda: fai partire il cronometro (testata con inizio), chiama reply con uno spinner, poi calcola
   il costo con PREZZI del modello (input × prezzo input + output × prezzo output, diviso un milione),
-  somma tempo, token e costo ai totali della sessione e mostra misure() sotto la risposta
+  somma tempo, token e costo ai totali della sessione, chiama registra_richiesta() con le misure
+  e mostra misure() sotto la risposta
 - se la chiamata fallisce, mostra l'errore nella chat invece di bloccare l'app
 
 Regole: codice semplice, senza classi, commenti in italiano.

@@ -29,6 +29,8 @@ Cosa deve esporre ui.py:
 - testata(contenitore, modello, documenti, token, dollari, secondi, ultima, inizio=None, token_richiesta=0,
   costo_richiesta=0.0, tok_in=0, tok_out=0, frasi=None)
 - misure(a) con a = {"secondi", "token", "costo", "modello"}
+- registra_richiesta(a) e pulsante_azzera(): il totale di tutto il workshop, salvato in
+  ~/.sustainability-copilot/workshop.json (fuori dal repository), che somma tutti gli step e sopravvive ai riavvii
 - importa PREZZI da config.py per mostrare il prezzo del modello scelto
 
 Aspetto:
@@ -39,8 +41,8 @@ Aspetto:
   quando l'agente lavora; l'animazione d'ingresso parte solo la prima volta
 - pannello "Tempi e costi" fisso a destra (290 px), richiudibile in una pillola con tempo e costo: tempo della
   richiesta (il cronometro scorre nel browser) e totale della sessione; costo della sessione sempre in dollari
-  con 4 decimali sotto il dollaro e la virgola italiana, con il costo della richiesta in corso; barra del budget
-  mensile di 4 $; token di input e di output; modello con i prezzi per milione di token; documenti letti
+  con 4 decimali sotto il dollaro e la virgola italiana, con il costo della richiesta in corso; costo di tutto il
+  workshop, con il numero di richieste e da quando si conta, e la barra del budget mensile di 4 $; token di input e di output; modello con i prezzi per milione di token; documenti letti
 - numeri che salgono con un'animazione quando cambiano
 - sotto ogni risposta una riga di misure: tempo, token, costo, modello
 - bordo luminoso che gira attorno al pannello dell'agente mentre lavora
@@ -68,6 +70,7 @@ Output: ui.py e .streamlit/config.toml completi.
 9. "Aggiungi il pulsante per il tutto schermo."
 10. "Pulisci l'interfaccia a favore della lettura e dell'accessibilità: sfondo bianco e pochi fronzoli.
     Fammi due o tre prototipi e scelgo il migliore." (scelto: carta)
+11. "Il costo della sessione si azzera a ogni step: aggiungi il totale di tutto il workshop."
 
 ## 3. Per cambiarla
 

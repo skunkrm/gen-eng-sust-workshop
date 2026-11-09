@@ -181,7 +181,9 @@ Il Generative Engine ha un endpoint negli Stati Uniti e uno in Europa, ciascuno 
 
 ## L'interfaccia
 
-Dagli step 1 a 3 l'app ha la stessa veste: tema scuro e chiaro (pulsante ☀ nell'intestazione), sfondo animato e il pannello **Tempi e costi** a destra, richiudibile, con il cronometro di ogni richiesta, i token divisi in input e output e il costo calcolato con i prezzi del modello scelto. Sotto ogni risposta trovate tempo, token, costo e modello di quella richiesta.
+Dagli step 1 a 3 l'app ha la stessa veste: sfondo bianco e pulito, pensato per la lettura (il tema scuro si attiva con il pulsante nell'intestazione, accanto al tutto schermo), e il pannello **Tempi e costi** a destra, richiudibile, con il cronometro di ogni richiesta, i token divisi in input e output e il costo calcolato con i prezzi del modello scelto. Sotto ogni risposta trovate tempo, token, costo e modello di quella richiesta.
+
+Il costo della sessione riparte da zero ogni volta che avviate un'app, cioè a ogni step. Il **costo di tutto il workshop** invece somma tutti gli step: è salvato in un piccolo file nella vostra cartella utente (`.sustainability-copilot/workshop.json`), fuori dal repository, e si azzera con il pulsante "Azzera il totale del workshop" nella barra laterale.
 
 La grafica sta tutta in `ui.py` e `.streamlit/config.toml`: non viene dai prompt degli step, ma è stata costruita allo stesso modo, descrivendo all'AI cosa si voleva vedere e rifinendo una richiesta alla volta: il prompt che la descrive e le richieste fatte, in ordine, sono in [`prompt/prompt_ui.md`](prompt/prompt_ui.md). Cambiatela come volete: il resto dell'app non ne dipende.
 
