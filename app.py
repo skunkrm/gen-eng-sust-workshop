@@ -7,7 +7,7 @@ import streamlit as st
 from config import MODEL, MODELS, PREZZI
 from engine import reply
 from extractor import build_knowledge_base
-from ui import AVATAR_AGENTE, AVATAR_UTENTE, NOME, misure, stile, testata
+from ui import AVATAR_AGENTE, AVATAR_UTENTE, NOME, misure, pulsante_azzera, registra_richiesta, stile, testata
 
 st.set_page_config(page_title=NOME, page_icon="🌱", layout="wide", initial_sidebar_state="expanded")
 stile()
@@ -49,6 +49,7 @@ with st.sidebar:
         for chiave in ("messages", "allegati", "stato"):  # token, costo e tempo restano: sono della sessione
             st.session_state[chiave] = type(DEFAULT[chiave])()
         st.rerun()
+    pulsante_azzera()  # il totale del workshop somma tutti gli step: si azzera prima di iniziare
 
 
 def aggiorna_testata(inizio=None, entrata=0, uscita=0, costo_richiesta=0.0):
@@ -171,6 +172,7 @@ if domanda:
     durata = time.time() - inizio
     st.session_state.ultima = {"secondi": durata, "token": entrata_tot + uscita_tot, "costo": costo_richiesta,
                                "modello": modello}
+    registra_richiesta(st.session_state.ultima)  # si somma anche al totale del workshop
     st.session_state.secondi += durata
     st.session_state.tokens += entrata_tot + uscita_tot
     st.session_state.tok_in += entrata_tot
