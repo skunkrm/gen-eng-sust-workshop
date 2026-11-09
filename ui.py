@@ -10,7 +10,7 @@ In tutti gli stili:
 - intestazione con il nome dell'agente e una frase che si scrive da sola (FRASI, diverse per ogni step);
 - pannello "Tempi e costi" a destra, richiudibile in una pillola: cronometro della richiesta e della sessione,
   costo calcolato con i prezzi del modello scelto (PREZZI in config.py), token di input e output,
-  barra del budget mensile di 4 $;
+  totale di tutto il workshop (sopravvive ai riavvii, somma tutti gli step) con la barra del budget mensile di 4 $;
 - sotto ogni risposta le misure: tempo, token, costo e modello;
 - bordo luminoso attorno al pannello dell'agente mentre lavora;
 - pulsanti per il tema chiaro o scuro (predefinito chiaro, la scelta resta salvata nel browser)
@@ -23,6 +23,8 @@ Niente librerie esterne: CSS e JavaScript puro, inseriti con st.html. Il tema di
 import html
 import json
 import os
+from datetime import datetime
+from pathlib import Path
 
 import streamlit as st
 
@@ -34,6 +36,10 @@ STILE = os.getenv("ESG_STILE", "carta")
 AVATAR_UTENTE = ":material/person:"
 AVATAR_AGENTE = ":material/eco:"
 BUDGET_MENSILE = 4.0  # dollari del piano gratuito del Generative Engine
+# Il totale della sessione riparte da zero a ogni avvio dell'app, cioè a ogni step.
+# Il totale del workshop no: lo teniamo in un piccolo file nella cartella dell'utente, fuori dal repository,
+# così somma tutti gli step e tutte le app aperte. Si azzera dalla barra laterale.
+FILE_WORKSHOP = Path.home() / ".sustainability-copilot" / "workshop.json"
 
 FRASI = ["legge bilanci, certificati e schede tecniche.", "calcola le emissioni con il codice.",
          "trova gli errori nei dati.", "verifica ogni citazione nei documenti.",
@@ -582,13 +588,51 @@ def _durata(secondi):
     return f"{int(secondi // 60)} min {int(secondi % 60):02d} s"
 
 
+def workshop():
+    """Totali del workshop letti dal file: costo, token, richieste, secondi e da quando si conta."""
+    vuoto = {"costo": 0.0, "token": 0, "richieste": 0, "secondi": 0.0, "dal": None}
+    try:
+        return {**vuoto, **json.loads(FILE_WORKSHOP.read_text(encoding="utf-8"))}
+    except (OSError, ValueError):
+        return vuoto
+
+
+def registra_richiesta(a):
+    """Somma al totale del workshop le misure di una richiesta (a = {"secondi", "token", "costo", ...})."""
+    w = workshop()
+    w["costo"] += a["costo"]
+    w["token"] += a["token"]
+    w["secondi"] += a["secondi"]
+    w["richieste"] += 1
+    w["dal"] = w["dal"] or datetime.now().strftime("%d/%m alle %H:%M")
+    try:
+        FILE_WORKSHOP.parent.mkdir(parents=True, exist_ok=True)
+        FILE_WORKSHOP.write_text(json.dumps(w), encoding="utf-8")
+    except OSError:
+        pass  # se il file non si può scrivere, l'app funziona lo stesso: manca solo il totale
+
+
+def pulsante_azzera():
+    """Nella barra laterale: azzera il totale del workshop (da premere prima di iniziare)."""
+    if st.button("Azzera il totale del workshop", help="Da premere prima di iniziare: riparte da zero il conto di tutti gli step"):
+        FILE_WORKSHOP.unlink(missing_ok=True)
+        st.rerun()
+
+
 def testata(contenitore, modello, documenti, token, dollari, secondi, ultima,
             inizio=None, token_richiesta=0, costo_richiesta=0.0, tok_in=0, tok_out=0, frasi=None):
     """Intestazione con i contatori. token, dollari e secondi sono i totali della sessione;
     durante una richiesta (inizio valorizzato) si aggiungono i valori parziali, e il tempo scorre nel browser."""
     lavoro = inizio is not None
     token_tot, costo_tot = token + token_richiesta, dollari + costo_richiesta
-    quota = min(100.0, costo_tot / BUDGET_MENSILE * 100)
+    w = workshop()
+    costo_ws = w["costo"] + costo_richiesta
+    quota = min(100.0, costo_ws / BUDGET_MENSILE * 100)
+    if w["richieste"]:
+        richieste = "1 richiesta" if w["richieste"] == 1 else f"{w['richieste']} richieste"
+        nota_ws = f"{richieste} in tutti gli step, dal {w['dal']}"
+    else:
+        nota_ws = "Nessuna richiesta: il conto parte da qui"
     prezzo_in, prezzo_out = PREZZI.get(modello, (0, 0))
     stato = "L'agente sta lavorando" if lavoro else "Pronto"
     frasi = html.escape(json.dumps(frasi or FRASI, ensure_ascii=False))  # le frasi che si scrivono da sole
@@ -632,6 +676,9 @@ def testata(contenitore, modello, documenti, token, dollari, secondi, ultima,
     <div class="esg-strumento tempo"><span>Tempo richiesta</span>{tempo}<small>{tempo_nota}</small></div>
     <div class="esg-strumento costo"><span>Costo della sessione</span>
       <b data-chiave="costo" data-valore="{costo_tot}" data-formato="costo">{_costo(costo_tot)}</b><small>{nota_costo}</small>
+    </div>
+    <div class="esg-strumento costo"><span>Costo di tutto il workshop</span>
+      <b data-chiave="workshop" data-valore="{costo_ws}" data-formato="costo">{_costo(costo_ws)}</b><small>{nota_ws}</small>
       <div class="esg-budget" style="--quota:{quota:.3f}%"><i></i></div>
       <div class="esg-budget-nota">{f"{quota:.2f}".replace(".", ",")}% del budget mensile di 4 $</div>
     </div>

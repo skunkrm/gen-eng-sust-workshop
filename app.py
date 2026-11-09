@@ -7,7 +7,7 @@ import streamlit as st
 from config import MODEL, MODELS, PREZZI
 from engine import reply
 from extractor import build_knowledge_base
-from ui import AVATAR_AGENTE, AVATAR_UTENTE, NOME, misure, stile, testata
+from ui import AVATAR_AGENTE, AVATAR_UTENTE, NOME, misure, pulsante_azzera, registra_richiesta, stile, testata
 
 FRASI = ["legge bilanci, Word ed Excel.", "fa la gap analysis sugli ESRS.",
          "cita il documento da cui prende ogni dato.", "controlla i dati prima di commentarli."]
@@ -43,6 +43,7 @@ with st.sidebar:
     if st.button("Nuova conversazione"):  # token, costo e tempo restano: sono della sessione
         st.session_state.messages, st.session_state.misure = [], {}
         st.rerun()
+    pulsante_azzera()  # il totale del workshop somma tutti gli step: si azzera prima di iniziare
 
 
 def aggiorna_testata(inizio=None):
@@ -90,6 +91,7 @@ if domanda:
     durata = time.time() - inizio
     s = st.session_state
     s.ultima = {"secondi": durata, "token": entrata + uscita, "costo": costo, "modello": modello}
+    registra_richiesta(s.ultima)  # si somma anche al totale del workshop
     s.secondi += durata
     s.tokens += entrata + uscita
     s.tok_in += entrata
