@@ -6,7 +6,7 @@ Ecco i file attuali:
 
 [incolla qui il contenuto di config.py, extractor.py, engine.py e app.py]
 
-Nuova struttura: config.py, extractor.py (invariato), ui.py (invariato), tools.py (nuovo), inventario.py (nuovo),
+Nuova struttura: config.py, extractor.py (invariato), ui.py (invariato), tools.py (nuovo), analisi.py (nuovo),
 generator.py (nuovo), engine.py, app.py
 
 ## config.py
@@ -19,12 +19,21 @@ generator.py (nuovo), engine.py, app.py
   "Quando ricevi dati numerici:
    1. prima di qualsiasi calcolo controlla la qualità dei dati (unità incoerenti, valori anomali rispetto agli
       altri mesi, dati mancanti), segnala cosa trovi e dichiara le correzioni che applichi;
-   2. non fare mai calcoli a mente (somme, medie, percentuali, conversioni): per l'Excel dei consumi usa
-      calcola_inventario, per poche voci singole calcola_emissioni;
+   2. non fare mai calcoli a mente (somme, medie, percentuali, variazioni, conversioni): per l'Excel dei dati
+      ambientali usa calcola_kpi_ambientali, per poche voci singole di emissioni calcola_emissioni;
    3. nelle risposte e nei documenti riporta solo i numeri restituiti dagli strumenti;
-   4. per l'Excel dell'inventario usa crea_report_inventario, non crea_documento;
-   5. indica sempre il fattore di emissione e la fonte usati."
-  Poi l'elenco degli strumenti, una riga ciascuno (calcola_inventario, crea_report_inventario, calcola_emissioni,
+   4. per l'Excel dei KPI ambientali usa crea_report_ambientale, non crea_documento."
+  Poi le regole per aggiornare un'analisi ambientale ISO 14001 (punti 6.1.2 e 9.1.1):
+   1. chiama calcola_kpi_ambientali passando in kpi_anno_precedente i KPI della vecchia analisi, con stima_mancanti true;
+   2. verifica la congruenza tra vecchia analisi e dati nuovi: attività, impianti, camini, codici EER e aspetti nuovi
+      o cambiati; un elemento presente nei dati e assente dalla vecchia analisi è un aspetto da aggiungere;
+   3. rivaluta la significatività con lo STESSO metodo e gli stessi criteri della vecchia analisi, punteggio per criterio;
+      per l'entità usa la fascia restituita dallo strumento (variazione dell'indicatore specifico, o quota del limite);
+   4. verifica il raggiungimento degli obiettivi con i valori dello strumento;
+   5. crea l'Excel con crea_report_ambientale e il registro aggiornato in Word con crea_documento (formato docx):
+      aspetti e punteggi, novità, obiettivi, punti da verificare;
+   6. segnala cosa deve verificare il consulente prima dell'audit: l'analisi aggiornata è una bozza.
+  Poi l'elenco degli strumenti, una riga ciascuno (calcola_kpi_ambientali, crea_report_ambientale, calcola_emissioni,
   crea_grafico, crea_documento, crea_verbale_hse).
 - nel SYSTEM_PROMPT anche le regole del Digital Product Passport, così all'utente basta una frase
   («Crea il Digital Product Passport della staffa SP-220 dai documenti caricati, in JSON e in PDF»):
@@ -59,8 +68,10 @@ generator.py (nuovo), engine.py, app.py
   kg CO2e per passeggero-km; "Auto propria" 0.17265 kg CO2e/km per veicolo (DESNZ/DEFRA 2026);
   acciaio_media_mondiale 1.92 kg CO2/kg (worldsteel, Sustainability Indicators 2025, dato secondario)
 - TOOLS: definizione OpenAI di sei strumenti, con descrizioni che dicono al modello quando usarli
-  - calcola_inventario(stima_mancanti facoltativo): inventario GHG letto direttamente dall'Excel dei consumi
-  - crea_report_inventario(nome_file, valori_dichiarati facoltativo, es. {"Scope 1": 1106, "Scope 2": 2657})
+  - calcola_kpi_ambientali(kpi_anno_precedente facoltativo, stima_mancanti facoltativo): KPI dell'analisi ambientale
+    letti direttamente dall'Excel dei dati; kpi_anno_precedente usa i nomi esatti degli indicatori
+    ("Energia elettrica specifica", "Prelievo idrico specifico", "Camino E2 - COV", ...)
+  - crea_report_ambientale(nome_file): Excel degli ultimi KPI calcolati
   - calcola_emissioni(voci): ogni voce ha descrizione, scope (enum Scope 1/2/3), fattore (enum delle chiavi di FATTORI
     più "dichiarato_fornitore"), quantita, e per i viaggi andata_ritorno (bool) e persone (int). Raddoppia se
     andata_ritorno, moltiplica per persone solo per treni e aerei. Con "dichiarato_fornitore" servono valore_fattore,
@@ -81,22 +92,29 @@ generator.py (nuovo), engine.py, app.py
   "Verifica delle fonti superata: N citazioni trovate nei documenti, M campi dichiarati mancanti."
   e salva il JSON verificato in stato["ultimo_dpp"]
 - execute_tool(name, args, stato) -> (risultato testuale per il modello, evento per l'interfaccia o None);
-  stato è un dizionario di sessione con ultimo grafico, ultimo inventario, ultimo DPP, foto ed Excel caricati;
+  stato è un dizionario di sessione con ultimo grafico, ultimi KPI, ultimo DPP, foto ed Excel caricati;
   gli errori tornano al modello come testo, così può correggersi
 
-## inventario.py: l'inventario GHG lo calcola il codice, non il modello
-- calcola(files, stima_mancanti=False): legge l'Excel caricato (fogli Consumi_energia, Flotta, Refrigeranti,
-  Viaggi_lavoro, Fattori_emissione, intestazioni nella terza riga); per ogni sito controlla le serie mensili:
+## analisi.py: i KPI dell'analisi ambientale li calcola il codice, non il modello
+- calcola(files, stima_mancanti=False, kpi_anno_precedente=None): legge l'Excel caricato (fogli Produzione, Energia,
+  Acqua, Rifiuti, Emissioni_atmosfera, intestazioni nella terza riga); per ogni sito controlla le serie mensili:
   un valore oltre 50 volte la mediana è un errore di unità (Wh invece di kWh), va diviso per 1000 e dichiarato;
-  un mese mancante va escluso e dichiarato, oppure stimato con la media se stima_mancanti è true;
-  restituisce controlli_qualita e totali per categoria, scope e sito
-- pubblico(inv): il risultato per il modello, senza il dettaglio riga per riga (chiavi che iniziano con "_")
-- report_excel(inventario, valori_dichiarati): Excel con fogli di dettaglio, controlli di qualità, fattori
-  e un riepilogo con formule SUM/SUMIF, più il confronto con i valori dichiarati nel bilancio
+  un mese mancante va escluso e dichiarato, oppure stimato con la media se stima_mancanti è true
+- KPI: produzione; energia elettrica totale (rete + fotovoltaico, MWh) e specifica (MWh/t); gas naturale e specifico;
+  prelievo idrico e specifico; rifiuti prodotti e specifici; rifiuti pericolosi e loro quota; quota avviata a recupero
+  (operazioni R); per ogni camino la concentrazione e la quota del limite
+- con kpi_anno_precedente: variazione percentuale (in punti per le quote) e fascia: "stabile o in calo (meno di +5%)",
+  "aumento tra +5% e +15%", "aumento oltre +15%"; per i camini la fascia è sulla quota del limite
+  (sotto il 50%, tra il 50% e l'80%, oltre l'80%)
+- pubblico(ris): il risultato per il modello, senza il dettaglio riga per riga (chiavi che iniziano con "_")
+- report_excel(ris): Excel con fogli Produzione, Energia, Acqua, Rifiuti, Emissioni e un Riepilogo KPI in cui ogni
+  valore è una formula sui fogli di dettaglio, con l'anno precedente, la variazione e i controlli di qualità
 
 ## generator.py (tutto in memoria con BytesIO, mai file su disco)
 - make_chart(...) -> PNG con matplotlib (backend "Agg"), barre affiancate se c'è la serie di confronto
 - make_document(formato, nome_file, titolo, contenuto, grafico=None, foto=None) -> (bytes, nome file, mime)
+- Word: intestazione delle tabelle colorata, righe alterne, colonne larghe quanto serve al contenuto,
+  piè di pagina "Bozza generata con l'AI: da verificare prima dell'uso"
 - il contenuto usa "# " e "## " per i titoli, "- " per gli elenchi, righe con "|" per le tabelle
   (salta le righe |---|); in Excel converti i numeri in formato italiano (1.234,5 e 12%) in numeri veri
 - PDF con fpdf2: una classe _Report(FPDF) con fascia scura d'intestazione e linea verde e ambra sulla prima pagina,

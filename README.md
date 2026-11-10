@@ -1,6 +1,6 @@
 # Sustainability Copilot — Workshop
 
-Materiale per un workshop pratico della **CoE Sustainability**: come un consulente ESG, senza essere sviluppatore, costruisce con il **Generative Engine di Capgemini** un agente che analizza un bilancio di sostenibilità, calcola le emissioni e trova gli errori.
+Materiale per un workshop pratico della **CoE Sustainability**: come un consulente ESG, senza essere sviluppatore, costruisce con il **Generative Engine di Capgemini** un agente che verifica e aggiorna l'analisi ambientale di un'azienda certificata ISO 14001, calcola i KPI e trova gli errori nei dati.
 
 Il workshop riprende, con il suo permesso, la struttura del [workshop di Marco Pastorello](https://github.com/markpast92/generative-engine-lesson): prompt per step e branch come checkpoint. Grazie Marco!
 
@@ -72,8 +72,8 @@ Il branch `main` contiene **prompt** e **documenti di test**. Il codice funziona
 ```powershell
 git checkout 0-prima-chiamata   # Step 0 — prima chiamata al modello
 git checkout 1-consulente-esg   # Step 1 — chatbot consulente ESG
-git checkout 2-gap-analysis     # Step 2 — upload documenti e gap analysis ESRS
-git checkout 3-agente-esg       # Step 3 — agente con calcolo emissioni, grafici e report
+git checkout 2-gap-analysis     # Step 2 — upload documenti e verifica di congruenza dell'analisi ambientale
+git checkout 3-agente-esg       # Step 3 — agente con KPI ambientali, registro aggiornato, DPP e verbale HSE
 ```
 
 In ogni branch:
@@ -103,7 +103,7 @@ uv run main.py
 ```mermaid
 flowchart LR
     A["🔌 0-prima-chiamata\nIl codice parla col modello"] --> B["💬 1-consulente-esg\nChatbot con system prompt ESG"]
-    B --> C["📄 2-gap-analysis\nLegge bilancio ed Excel"]
+    B --> C["📄 2-gap-analysis\nLegge analisi ambientale ed Excel"]
     C --> D["🤖 3-agente-esg\nCalcola, verifica, crea report"]
 ```
 
@@ -112,7 +112,7 @@ flowchart LR
 | 0 | [`prompt/prompt_0.md`](prompt/prompt_0.md) | `0-prima-chiamata` | `main.py`: una domanda al modello dal terminale |
 | 1 | [`prompt/prompt_1.md`](prompt/prompt_1.md) | `1-consulente-esg` | `app.py`, `config.py`, `engine.py`: chatbot web con il consulente ESG |
 | 2 | [`prompt/prompt_2.md`](prompt/prompt_2.md) | `2-gap-analysis` | `extractor.py`: upload di PDF, Word ed Excel |
-| 3 | [`prompt/prompt_3.md`](prompt/prompt_3.md) | `3-agente-esg` | `tools.py`, `inventario.py`, `generator.py`: inventario GHG, verifica delle fonti, grafici, report Excel e PDF, Digital Product Passport, verbale HSE da foto |
+| 3 | [`prompt/prompt_3.md`](prompt/prompt_3.md) | `3-agente-esg` | `tools.py`, `analisi.py`, `generator.py`: KPI ambientali ISO 14001, registro aggiornato in Word, verifica delle fonti, grafici, report Excel e PDF, Digital Product Passport, verbale HSE da foto |
 | UI | [`prompt/prompt_ui.md`](prompt/prompt_ui.md) | dallo step 1 | `ui.py` e `.streamlit/config.toml`: l'interfaccia, con tempi e costi in tempo reale |
 
 Ogni step si costruisce incollando il prompt in un LLM, per esempio gli [agenti del Generative Engine](https://generative.engine.capgemini.com/agents). Dove il prompt dice `[incolla qui …]`, incollate i file prodotti nello step precedente. Se qualcosa non funziona al primo colpo, incollate l'errore all'LLM: di solito in uno o due passaggi è risolto. I branch sono i **checkpoint**: se vi perdete, ripartite da lì.
@@ -125,16 +125,15 @@ In `doc_test/` ci sono i documenti di un'**azienda fittizia** che produce compon
 
 | File | Contenuto |
 |---|---|
-| `Ardesia_Bilancio_Sostenibilita_2025.pdf` | Bilancio di sostenibilità 2025 (6 pagine, riferimento ESRS) |
-| `Ardesia_consumi_2025.xlsx` | Consumi energetici mensili, flotta, gas refrigeranti, trasferte, fattori di emissione |
+| `Ardesia_Analisi_Ambientale_2024.docx` | Analisi ambientale ISO 14001 con i dati 2024: metodo di significatività, registro degli aspetti, KPI e obiettivi 2025 |
+| `Ardesia_dati_ambientali_2025.xlsx` | Dati ambientali 2025 forniti dal cliente: produzione, energia, acqua, rifiuti (codici EER), emissioni ai camini con i limiti AUA |
 
 I documenti contengono **errori e lacune inseriti apposta**. Provate a farli trovare all'agente prima di leggere le soluzioni in fondo.
 
 Domande da provare:
 
-- *Step 2:* «Fai una gap analysis del bilancio rispetto all'ESRS E1: per ogni obbligo da E1-1 a E1-9 indica in tabella se è coperto, parziale o mancante, e perché. Rispondi solo con la tabella.» Provatela con Nova Lite e con Haiku 5.5.
-- *Step 3:* «Calcola le emissioni Scope 1, Scope 2 location-based e Scope 3 delle trasferte del 2025 dai dati di consumo, confrontale con il bilancio e spiegami le differenze. Poi crea un report Excel con i calcoli.»
-- *Step 3:* «Fammi anche un PDF di una pagina per il cliente con un grafico delle emissioni per scope.»
+- *Step 2:* «Confronta l'analisi ambientale 2024 con i dati ambientali 2025: per ogni aspetto del registro e per ogni novità nei dati indica in tabella se l'analisi è ancora congruente, da aggiornare o mancante, e perché. Rispondi solo con la tabella.» Provatela con Nova Lite e con Haiku 5.5.
+- *Step 3:* «Aggiorna l'analisi ambientale per il riesame ISO 14001: calcola i KPI 2025 e confrontali con il 2024, rivaluta la significatività degli aspetti e verifica gli obiettivi. Poi crea l'Excel dei KPI e il registro aggiornato degli aspetti in Word.»
 
 ### Digital Product Passport: la staffa SP-220
 
@@ -151,7 +150,7 @@ Nello step 3, dopo aver caricato i quattro file, scrivete: «Crea il Digital Pro
 
 **Il codice controlla l'AI.** Prima di creare il JSON, lo strumento verifica che ogni citazione dei campi "documentato" compaia davvero nei documenti caricati, e che i campi "mancante" non abbiano un valore. Se la verifica non passa, il file non viene creato e il modello deve correggersi: nel pannello dell'agente vedete quali campi non tornano.
 
-**Anche l'inventario lo calcola il codice.** Nello step 3 lo strumento `calcola_inventario` legge direttamente l'Excel dei consumi, segnala e corregge le anomalie, e restituisce i totali; `crea_report_inventario` genera l'Excel con le formule e il confronto con il bilancio. Il modello non ricopia valori e non fa somme a mente: commenta i risultati.
+**Anche i KPI li calcola il codice.** Nello step 3 lo strumento `calcola_kpi_ambientali` legge direttamente l'Excel dei dati ambientali, segnala e corregge le anomalie, calcola i KPI assoluti e per tonnellata, le variazioni rispetto all'anno precedente e la quota del limite di ogni camino; `crea_report_ambientale` genera l'Excel con le formule. Il modello non ricopia valori e non fa conti a mente: verifica la congruenza, rivaluta la significatività con il metodo della vecchia analisi e scrive il registro aggiornato.
 
 Il DPP è **dimostrativo**: i requisiti di dettaglio per i prodotti in acciaio dipenderanno dall'atto delegato previsto dal Regolamento ESPR (UE) 2024/1781.
 
@@ -169,7 +168,7 @@ I fattori di emissione nel file Excel sono **indicativi, a scopo formativo**: pe
 |---|---|
 | `amazon.nova-lite-v1:0` | Il più economico. Nello step 2 è il termine di confronto: sbaglia proprio dove serve. Non supporta i tool. |
 | `anthropic.claude-haiku-5-5` | Veloce ed economico (circa 20 volte meno di Sonnet), supporta tool e immagini. Predefinito negli step 1 e 3, e il modello buono del confronto nello step 2. |
-| `anthropic.claude-sonnet-5-5` | Il più potente e il più costoso. Sull'host europeo scrive lentamente: una gap analysis lunga può superare i 3 minuti. |
+| `anthropic.claude-sonnet-5-5` | Il più potente e il più costoso. Sull'host europeo scrive lentamente: una tabella lunga può superare i 3 minuti. |
 
 Il modello si cambia in `config.py`. Il catalogo completo, con i prezzi per milione di token, è nel **Models catalog** dello Studio.
 
@@ -196,20 +195,21 @@ In alto nell'intestazione c'è anche il pulsante per il **tutto schermo** (si es
 
 | # | Dove | Errore | Valore corretto (circa) |
 |---|---|---|---|
-| 1 | Excel | Cremona, settembre: energia inserita in Wh invece che in kWh | 281.450 kWh, non 281.450.000 |
-| 2 | Excel | Milano, agosto: dato mancante, mentre il bilancio dice che non ci sono stime | — |
-| 3 | Bilancio | Scope 2 calcolato con il fattore ISPRA del 2023 (0,256) invece di quello 2025 (0,213) | 2.211 t CO2e contro 2.657 dichiarate |
-| 4 | Bilancio | Scope 1 senza le ricariche di gas refrigeranti del registro F-gas | 1.135 t CO2e contro 1.106 dichiarate |
-| 5 | Bilancio | Scope 3 dichiarato non materiale | Solo le trasferte valgono circa 14,6 t CO2e; per un'azienda metalmeccanica l'acciaio acquistato è di solito la voce principale |
-| 6 | Bilancio | Lacune ESRS E1 | Manca il piano di transizione (E1-1); obiettivo senza anno base né perimetro (E1-4); mix energetico incompleto (E1-5); mancano market-based, Scope 3 e intensità per ricavi, circa 38,7 t CO2e per milione di euro (E1-6) |
+| 1 | Excel, Energia | Cremona, settembre: energia inserita in Wh invece che in kWh | 281.450 kWh, non 281.450.000 |
+| 2 | Excel, Acqua | Cremona, dicembre: lettura mancante | stimata con la media degli altri mesi, circa 401 m³ |
+| 3 | Excel, Emissioni | Camino E4 della nuova cabina di verniciatura: assente dalla vecchia analisi | nuovo aspetto, COV al 54% del limite: S = 3 + 2 + 2 = 7, significativo |
+| 4 | Excel, Rifiuti | Rifiuto pericoloso EER 12 01 09* della nuova linea CNC di Cremona: assente dal registro | rifiuti pericolosi da 27,4 a 68,0 t; quota avviata a recupero 93,5%, sotto l'obiettivo del 95% |
+| 5 | Excel, Acqua | Perdita sulla rete antincendio di Piacenza (giugno-agosto) | prelievo idrico specifico 2,28 m³/t, +19,9%: l'aspetto diventa significativo (S = 7) |
+| 6 | Excel, Emissioni | COV al camino E2 al 90% del limite | obiettivo O4 (sotto l'80%) non raggiunto; S = 8 |
+| 7 | Obiettivi | Energia elettrica specifica | 0,877 MWh/t, −5,2%: obiettivo O1 raggiunto |
 
 **Digital Product Passport della staffa SP-220**
 
 | # | Dove | Cosa deve emergere |
 |---|---|---|
-| 7 | Certificato CSL | La piastra di rinforzo non ha origine, contenuto riciclato né impronta di carbonio: va usato un dato secondario (worldsteel, 1,92 kg CO2/kg) e segnalato |
-| 8 | Distinta base | Manca la dichiarazione del fornitore delle viti, il GTIN è "da assegnare" |
-| 9 | Scheda tecnica | L'affermazione "oltre il 90% di acciaio riciclato" non è supportata: l'unico dato documentato è l'87% del corpo staffa |
-| 10 | Calcolo | Carbon footprint dalla culla al cancello circa 4,45 kg CO2e per pezzo, di cui circa il 31% da dati secondari; esclusi vernice e imballo, per cui mancano fattori |
+| 8 | Certificato CSL | La piastra di rinforzo non ha origine, contenuto riciclato né impronta di carbonio: va usato un dato secondario (worldsteel, 1,92 kg CO2/kg) e segnalato |
+| 9 | Distinta base | Manca la dichiarazione del fornitore delle viti, il GTIN è "da assegnare" |
+| 10 | Scheda tecnica | L'affermazione "oltre il 90% di acciaio riciclato" non è supportata: l'unico dato documentato è l'87% del corpo staffa |
+| 11 | Calcolo | Carbon footprint dalla culla al cancello circa 4,45 kg CO2e per pezzo, di cui circa il 31% da dati secondari; esclusi vernice e imballo, per cui mancano fattori |
 
 </details>
