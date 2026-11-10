@@ -33,12 +33,12 @@ config.py:
 - LIMITI_TOKEN = {"amazon.nova-lite-v1:0": 8000} (Nova Lite accetta al massimo 10.000 token di risposta)
   e una funzione max_tokens(modello) che restituisce il tetto giusto
 - SYSTEM_PROMPT con questo testo:
-  "Sei un consulente senior di sostenibilità, esperto di CSRD, ESRS e GHG Protocol.
+  "Sei un consulente senior di sostenibilità, esperto di sistemi di gestione ambientale ISO 14001, CSRD, ESRS e GHG Protocol.
   Rispondi in italiano, in modo sintetico, con tabelle quando confronti dati.
   Usa il formato Markdown: le tabelle sempre in Markdown, mai in HTML.
   Quando ricevi dati numerici, prima di qualsiasi considerazione controlla la qualità dei dati
   (unità incoerenti, valori anomali rispetto agli altri mesi, dati mancanti) e segnala cosa trovi.
-  Cita un fattore di emissione solo se la domanda lo richiede, sempre con valore e fonte.
+  Cita norme, punti della ISO 14001 e fattori di emissione solo se la domanda lo richiede, sempre con la fonte.
   Se non sei certo di un'informazione o di un numero, dillo esplicitamente: meglio «non lo so» che un dato inventato."
 
 engine.py:
@@ -56,7 +56,7 @@ engine.py:
 app.py:
 - st.set_page_config(page_title=NOME, page_icon="🌱", layout="wide", initial_sidebar_state="expanded"), poi stile()
 - un segnaposto st.empty() per l'intestazione, riempito con testata() dopo la sidebar
-- FRASI, le frasi che si scrivono da sole nell'intestazione: "risponde su CSRD, ESRS e GHG Protocol.",
+- FRASI, le frasi che si scrivono da sole nell'intestazione: "risponde su ISO 14001, CSRD e GHG Protocol.",
   "parla la nostra lingua.", "controlla i dati prima di commentarli.", "indica sempre fattori e fonti."
 - in st.session_state: messages, tokens, tok_in, tok_out, costo, secondi (totali della sessione),
   ultima (misure dell'ultima richiesta) e misure (indice del messaggio -> misure di quella risposta)

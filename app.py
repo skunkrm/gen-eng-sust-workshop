@@ -8,7 +8,7 @@ from config import MODEL, PREZZI
 from engine import reply
 from ui import AVATAR_AGENTE, AVATAR_UTENTE, NOME, misure, pulsante_azzera, registra_richiesta, stile, testata
 
-FRASI = ["risponde su CSRD, ESRS e GHG Protocol.", "parla la nostra lingua.",
+FRASI = ["risponde su ISO 14001, CSRD e GHG Protocol.", "parla la nostra lingua.",
          "controlla i dati prima di commentarli.", "indica sempre fattori e fonti."]
 
 st.set_page_config(page_title=NOME, page_icon="🌱", layout="wide", initial_sidebar_state="expanded")

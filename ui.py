@@ -41,9 +41,9 @@ BUDGET_MENSILE = 4.0  # dollari del piano gratuito del Generative Engine
 # così somma tutti gli step e tutte le app aperte. Si azzera dalla barra laterale.
 FILE_WORKSHOP = Path.home() / ".sustainability-copilot" / "workshop.json"
 
-FRASI = ["legge bilanci, certificati e schede tecniche.", "calcola le emissioni con il codice.",
+FRASI = ["legge analisi ambientali, certificati e schede tecniche.", "calcola i KPI ambientali con il codice.",
          "trova gli errori nei dati.", "verifica ogni citazione nei documenti.",
-         "costruisce passaporti digitali di prodotto.", "prepara report Excel e PDF."]
+         "costruisce passaporti digitali di prodotto.", "prepara report Excel, Word e PDF."]
 
 CSS = r"""
 <style>
