@@ -9,7 +9,7 @@ from engine import reply
 from extractor import build_knowledge_base
 from ui import AVATAR_AGENTE, AVATAR_UTENTE, NOME, misure, pulsante_azzera, registra_richiesta, stile, testata
 
-FRASI = ["legge bilanci, Word ed Excel.", "fa la gap analysis sugli ESRS.",
+FRASI = ["legge analisi ambientali, Word ed Excel.", "verifica la congruenza con i dati nuovi.",
          "cita il documento da cui prende ogni dato.", "controlla i dati prima di commentarli."]
 
 st.set_page_config(page_title=NOME, page_icon="🌱", layout="wide", initial_sidebar_state="expanded")

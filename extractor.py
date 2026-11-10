@@ -1,6 +1,8 @@
 """Estrae il testo dai documenti caricati: PDF, Word ed Excel."""
 
 import docx
+from docx.table import Table
+from docx.text.paragraph import Paragraph
 import openpyxl
 from pypdf import PdfReader
 
@@ -14,11 +16,17 @@ def _pdf(file):
 
 
 def _docx(file):
+    """Paragrafi e tabelle nell'ordine in cui compaiono: ogni tabella resta sotto il suo titolo."""
     documento = docx.Document(file)
-    righe = [p.text for p in documento.paragraphs if p.text.strip()]
-    for tabella in documento.tables:
-        for riga in tabella.rows:
-            righe.append(" | ".join(c.text.strip() for c in riga.cells))
+    righe = []
+    for blocco in documento.element.body.iterchildren():
+        if blocco.tag.endswith("}p"):
+            testo = Paragraph(blocco, documento).text.strip()
+            if testo:
+                righe.append(testo)
+        elif blocco.tag.endswith("}tbl"):
+            for riga in Table(blocco, documento).rows:
+                righe.append(" | ".join(c.text.strip() for c in riga.cells))
     return "\n".join(righe)
 
 
