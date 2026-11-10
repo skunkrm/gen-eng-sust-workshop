@@ -9,7 +9,9 @@ from io import BytesIO
 import docx
 import matplotlib
 import openpyxl
-from docx.shared import Inches
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.shared import Cm, Inches, Pt, RGBColor
 from fpdf import FPDF, FontFace
 from openpyxl.styles import Font, PatternFill
 
@@ -145,26 +147,86 @@ def _xlsx(titolo, contenuto):
 
 # ---------- Word ----------
 
+def _ombra(cella, colore):
+    """Colore di sfondo di una cella di Word."""
+    proprieta = cella._tc.get_or_add_tcPr()
+    sfondo = OxmlElement("w:shd")
+    sfondo.set(qn("w:val"), "clear")
+    sfondo.set(qn("w:color"), "auto")
+    sfondo.set(qn("w:fill"), colore)
+    proprieta.append(sfondo)
+
+
+def _tabella_docx(d, righe):
+    """Tabella con intestazione colorata, righe alterne e colonne larghe quanto serve al contenuto."""
+    colonne = max(len(r) for r in righe)
+    righe = [list(r) + [""] * (colonne - len(r)) for r in righe]
+    # larghezza di ogni colonna proporzionale al testo più lungo (parola più lunga come minimo), su 17 cm
+    pesi, minimi = [], []
+    for c in range(colonne):
+        testi = [_pulisci(r[c]) for r in righe]
+        parola = max((len(w) for x in testi for w in x.split()), default=1)
+        pesi.append(max(parola, min(max(len(x) for x in testi), 40)))
+        minimi.append(0.6 + 0.2 * parola)  # in cm: la parola più lunga deve starci intera
+    larghezze = [max(17 * p / sum(pesi), m) for p, m in zip(pesi, minimi)]
+    for _ in range(3):  # riporta il totale a 17 cm togliendo spazio solo alle colonne sopra il minimo
+        eccesso = sum(larghezze) - 17
+        larghe = [k for k, (w, m) in enumerate(zip(larghezze, minimi)) if w > m + 0.01]
+        if eccesso <= 0.01 or not larghe:
+            break
+        quota = sum(larghezze[k] - minimi[k] for k in larghe)
+        for k in larghe:
+            larghezze[k] -= eccesso * (larghezze[k] - minimi[k]) / quota
+    t = d.add_table(rows=0, cols=colonne)
+    t.style = "Table Grid"
+    t.autofit = False
+    for k, w in enumerate(larghezze):
+        t._tbl.tblGrid.findall(qn("w:gridCol"))[k].set(qn("w:w"), str(int(w * 567)))
+    for n, riga in enumerate(righe):
+        celle = t.add_row().cells
+        for k, testo in enumerate(riga):
+            celle[k].width = Cm(larghezze[k])
+            celle[k].text = ""
+            run = celle[k].paragraphs[0].add_run(_pulisci(testo))
+            run.font.size = Pt(9)
+            if n == 0:
+                run.bold = True
+                run.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
+                _ombra(celle[k], "1F4E5A")
+            elif n % 2 == 0:
+                _ombra(celle[k], "EEF4F2")
+    d.add_paragraph()
+
+
 def _docx(titolo, contenuto, grafico, foto=None):
     d = docx.Document()
-    d.add_heading(titolo, 0)
+    stile = d.styles["Normal"]
+    stile.font.name = "Calibri"
+    stile.font.size = Pt(10.5)
+    for sezione in d.sections:
+        sezione.left_margin = sezione.right_margin = Cm(2)
+        sezione.top_margin = sezione.bottom_margin = Cm(2)
+        piede = sezione.footer.paragraphs[0]
+        piede.text = "Bozza generata con l'AI: da verificare prima dell'uso"
+        piede.runs[0].font.size = Pt(8)
+        piede.runs[0].font.color.rgb = RGBColor(0x66, 0x66, 0x66)
+    titolo_p = d.add_paragraph()
+    run = titolo_p.add_run(_pulisci(titolo))
+    run.bold = True
+    run.font.size = Pt(20)
+    run.font.color.rgb = RGBColor(0x1F, 0x4E, 0x5A)
     for tipo, valore in _blocchi(contenuto):
-        if tipo == "h1":
-            d.add_heading(_pulisci(valore), 1)
-        elif tipo == "h2":
-            d.add_heading(_pulisci(valore), 2)
-        elif tipo == "h3":
-            d.add_heading(_pulisci(valore), 3)
+        if tipo in ("h1", "h2", "h3"):
+            livello = {"h1": 1, "h2": 2, "h3": 3}[tipo]
+            if livello == 1 and _pulisci(valore).strip().lower() == _pulisci(titolo).strip().lower():
+                continue  # il titolo è già in testa al documento
+            h = d.add_heading(_pulisci(valore), livello)
+            for r in h.runs:
+                r.font.color.rgb = RGBColor(0x1F, 0x4E, 0x5A)
         elif tipo == "punto":
             d.add_paragraph(_pulisci(valore), style="List Bullet")
         elif tipo == "tabella":
-            colonne = max(len(r) for r in valore)
-            t = d.add_table(rows=0, cols=colonne)
-            t.style = "Light Grid Accent 1"
-            for riga in valore:
-                celle = t.add_row().cells
-                for i, c in enumerate(riga):
-                    celle[i].text = _pulisci(c)
+            _tabella_docx(d, valore)
         else:
             d.add_paragraph(_pulisci(valore))
     if grafico:

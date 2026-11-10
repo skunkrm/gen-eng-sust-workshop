@@ -9,7 +9,8 @@ Nuova struttura: config.py, engine.py, app.py, extractor.py (ui.py resta invaria
 extractor.py (nuovo):
 - extract_text(file): riceve un UploadedFile di Streamlit (ha l'attributo .name) e restituisce il testo
 - PDF con pypdf (from pypdf import PdfReader), indicando il numero di pagina
-- Word con python-docx (import docx), compresi i testi delle tabelle
+- Word con python-docx (import docx): paragrafi e tabelle nell'ordine in cui compaiono nel documento,
+  così ogni tabella resta sotto il suo titolo (scorri documento.element.body)
 - Excel con openpyxl (data_only=True): per ogni foglio scrivi "[Foglio: nome]" e poi ogni riga
   non vuota con i valori separati da " | "
 - build_knowledge_base(files): unisce i testi, ciascuno preceduto da "===== DOCUMENTO: nome ====="
@@ -23,7 +24,7 @@ config.py:
 - timeout del client a 180 secondi: con i documenti le risposte sono più lunghe
 - PREZZI, MAX_TOKENS = 16000 e LIMITI_TOKEN (Nova Lite 8.000) restano come sono
 - nel system prompt sostituisci le ultime due righe con:
-  "Quando usi un fattore di emissione, indica valore e fonte; se la domanda non lo richiede, non citarne.
+  "Quando confronti un documento con dati più recenti, per ogni voce indica il documento e il dato da cui parti.
   Se un'informazione non è nei documenti caricati o non ne sei certo, dillo esplicitamente:
   meglio «non lo so» che un dato inventato."
 
@@ -34,7 +35,7 @@ engine.py:
   "L'utente ha caricato questi documenti. Usali per rispondere e cita il documento da cui prendi ogni informazione."
 
 app.py:
-- FRASI: "legge bilanci, Word ed Excel.", "fa la gap analysis sugli ESRS.",
+- FRASI: "legge analisi ambientali, Word ed Excel.", "verifica la congruenza con i dati nuovi.",
   "cita il documento da cui prende ogni dato.", "controlla i dati prima di commentarli."
 - nella sidebar un selectbox per scegliere il modello tra quelli di MODELS (con la descrizione accanto al nome)
 - nella sidebar un file_uploader per PDF, DOCX e XLSX con accept_multiple_files=True

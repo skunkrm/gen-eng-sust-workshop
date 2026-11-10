@@ -109,7 +109,7 @@ if domanda:
     if immagini:  # le foto restano disponibili per i documenti (es. il verbale con la foto)
         st.session_state.stato["foto"] = [i["data"] for i in immagini]
 
-    # Gli Excel caricati servono così come sono allo strumento calcola_inventario
+    # Gli Excel caricati servono così come sono allo strumento calcola_kpi_ambientali
     st.session_state.stato["file_excel"] = [(f.name, f.getvalue()) for f in documenti
                                             if f.name.lower().endswith(".xlsx")]
 
@@ -126,6 +126,14 @@ if domanda:
                     if tipo == "step":
                         st.markdown(dati)
                         passi.append(dati)
+                    elif tipo == "calc" and "indicatori" in dati:  # KPI dell'analisi ambientale
+                        sintesi = (f"🧮 Calcolati dal codice **{len(dati['indicatori'])} indicatori ambientali**; "
+                                   f"{len(dati['controlli_qualita'])} anomalie nei dati corrette o segnalate")
+                        st.markdown(sintesi)
+                        passi.append(sintesi.replace("**", ""))
+                        for controllo in dati["controlli_qualita"]:
+                            st.markdown(f"- {controllo}")
+                            passi.append(f"    {controllo}")
                     elif tipo == "calc":
                         if dati["totale_t_CO2e"] >= 1:
                             sintesi = ", ".join(f"{k} = {v:,.1f} t CO2e" for k, v in dati["totali_per_scope_t_CO2e"].items())

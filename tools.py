@@ -8,7 +8,7 @@ Ogni strumento ha due parti:
 import json
 import re
 
-import inventario
+import analisi
 from generator import make_chart, make_document, make_dpp_pdf, make_verbale_hse
 
 # Fattori di emissione: stessi valori del foglio "Fattori_emissione" del file di test.
@@ -36,20 +36,35 @@ TOOLS = [
     {
         "type": "function",
         "function": {
-            "name": "calcola_inventario",
+            "name": "calcola_kpi_ambientali",
             "description": (
-                "Calcola l'inventario GHG leggendo direttamente il file Excel dei consumi caricato dall'utente "
-                "(fogli Consumi_energia, Flotta, Refrigeranti, Viaggi_lavoro). Il codice controlla la qualità dei dati, "
-                "corregge le unità anomale dichiarandolo, applica i fattori del foglio Fattori_emissione e restituisce "
-                "i totali per categoria, scope e sito. Usalo SEMPRE per i dati di consumo: non ricopiare i valori."
+                "Calcola gli indicatori dell'analisi ambientale (ISO 14001) leggendo direttamente il file Excel dei dati "
+                "ambientali caricato dall'utente (fogli Produzione, Energia, Acqua, Rifiuti, Emissioni_atmosfera). "
+                "Il codice controlla la qualità dei dati, corregge le unità anomale dichiarandolo, calcola i KPI assoluti e "
+                "specifici per tonnellata, la quota del limite di ogni camino e, se gli passi i KPI dell'anno precedente, "
+                "le variazioni con la fascia di variazione. Usalo SEMPRE per i dati ambientali: non ricopiare i valori "
+                "e non calcolare variazioni a mente."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
+                    "kpi_anno_precedente": {
+                        "type": "object",
+                        "description": (
+                            "KPI dell'anno precedente presi dalla vecchia analisi ambientale, con i nomi esatti: "
+                            "\"Produzione\", \"Energia elettrica totale (rete + fotovoltaico)\", \"Energia elettrica specifica\", "
+                            "\"Gas naturale\", \"Gas naturale specifico\", \"Prelievo idrico\", \"Prelievo idrico specifico\", "
+                            "\"Rifiuti prodotti\", \"Rifiuti specifici\", \"Rifiuti pericolosi\", \"Quota di rifiuti pericolosi\", "
+                            "\"Quota di rifiuti avviati a recupero\", e per i camini \"Camino E1 - NOx\", \"Camino E2 - COV\" e simili. "
+                            "Valori numerici, nelle unità della vecchia analisi."
+                        ),
+                        "additionalProperties": {"type": "number"},
+                    },
                     "stima_mancanti": {
                         "type": "boolean",
-                        "description": "true per stimare i mesi mancanti con la media del sito; false (predefinito) per escluderli e segnalarli",
-                    }
+                        "description": "true per stimare i mesi mancanti con la media del sito (consigliato per i KPI annuali); "
+                                       "false per escluderli e segnalarli",
+                    },
                 },
             },
         },
@@ -57,22 +72,15 @@ TOOLS = [
     {
         "type": "function",
         "function": {
-            "name": "crea_report_inventario",
+            "name": "crea_report_ambientale",
             "description": (
-                "Crea il report Excel dell'ultimo inventario calcolato con calcola_inventario: riepilogo con formule, "
-                "dettaglio per riga, controlli di qualità e fattori. Usalo per l'Excel dell'inventario al posto di crea_documento. "
-                "Se nei documenti c'è un bilancio, passa i valori dichiarati per avere il foglio di confronto."
+                "Crea il report Excel degli ultimi KPI calcolati con calcola_kpi_ambientali: riepilogo dei KPI con formule, "
+                "confronto con l'anno precedente, fogli di dettaglio (energia, acqua, rifiuti, emissioni) e controlli di qualità. "
+                "Usalo per l'Excel dei KPI ambientali al posto di crea_documento."
             ),
             "parameters": {
                 "type": "object",
-                "properties": {
-                    "nome_file": {"type": "string", "description": "Nome senza estensione"},
-                    "valori_dichiarati": {
-                        "type": "object",
-                        "description": "Valori dichiarati nel bilancio, es. {\"Scope 1\": 1106, \"Scope 2\": 2657}",
-                        "additionalProperties": {"type": "number"},
-                    },
-                },
+                "properties": {"nome_file": {"type": "string", "description": "Nome senza estensione"}},
                 "required": ["nome_file"],
             },
         },
@@ -83,7 +91,7 @@ TOOLS = [
             "name": "calcola_emissioni",
             "description": (
                 "Calcola le emissioni di poche voci singole (per esempio i componenti di un prodotto). "
-                "Per l'Excel dei consumi aziendali usa invece calcola_inventario. "
+                "Per l'Excel dei dati ambientali usa invece calcola_kpi_ambientali. "
                 "Passa le voci singole come sono nei dati (una per sito e mese, per veicolo, per viaggio), "
                 "senza sommarle: le somme le fa lo strumento. "
                 "Per i viaggi passa la distanza di sola andata e indica andata_ritorno e persone: "
@@ -317,17 +325,18 @@ def execute_tool(name, args, stato):
     stato è un dizionario che dura per tutta la sessione (qui teniamo l'ultimo grafico).
     """
     try:
-        if name == "calcola_inventario":
-            inv = inventario.calcola(stato.get("file_excel", []), bool(args.get("stima_mancanti", False)))
-            stato["inventario"] = inv
-            risultato = inventario.pubblico(inv)
+        if name == "calcola_kpi_ambientali":
+            ris = analisi.calcola(stato.get("file_excel", []), bool(args.get("stima_mancanti", False)),
+                                  args.get("kpi_anno_precedente"))
+            stato["kpi_ambientali"] = ris
+            risultato = analisi.pubblico(ris)
             return json.dumps(risultato, ensure_ascii=False), ("calc", risultato)
 
-        if name == "crea_report_inventario":
-            if "inventario" not in stato:
-                return "Prima calcola l'inventario con calcola_inventario.", None
-            dati = inventario.report_excel(stato["inventario"], args.get("valori_dichiarati"))
-            nome = re.sub(r"[^\w\-]+", "_", args.get("nome_file") or "inventario_ghg").strip("_") + ".xlsx"
+        if name == "crea_report_ambientale":
+            if "kpi_ambientali" not in stato:
+                return "Prima calcola i KPI con calcola_kpi_ambientali.", None
+            dati = analisi.report_excel(stato["kpi_ambientali"])
+            nome = re.sub(r"[^\w\-]+", "_", args.get("nome_file") or "kpi_ambientali").strip("_") + ".xlsx"
             mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             return f"File {nome} creato e disponibile per il download.", ("file", {"data": dati, "filename": nome, "mime": mime})
 
